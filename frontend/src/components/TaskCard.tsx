@@ -22,7 +22,9 @@ export function TaskCard({ task, columns, onEdit, onDelete, onMove }: TaskCardPr
   return (
     <article className="task-card">
       <div className="task-card-top">
-        <h4 className="task-card-title">{task.title}</h4>
+        <h4 className="task-card-title" title={task.title}>
+          {task.title}
+        </h4>
         <TaskCardMenu
           task={task}
           columns={columns}

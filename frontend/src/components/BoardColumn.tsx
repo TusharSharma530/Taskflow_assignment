@@ -1,4 +1,5 @@
 import type { Column, Task } from '../types';
+import { statusTone } from '../utils/taskStatus';
 import { PlusIcon } from './icons';
 import { TaskCard } from './TaskCard';
 
@@ -10,6 +11,7 @@ interface BoardColumnProps {
   onDelete: (task: Task) => void;
   onMove: (task: Task, columnId: number) => void;
   showCount?: boolean;
+  filtersActive?: boolean;
 }
 
 export function BoardColumn({
@@ -20,33 +22,38 @@ export function BoardColumn({
   onDelete,
   onMove,
   showCount = true,
+  filtersActive = false,
 }: BoardColumnProps) {
+  const tone = statusTone(column.title);
+
   return (
-    <section className="column" aria-label={column.title}>
+    <section className={`column column-tone-${tone}`} aria-label={column.title}>
       <header className="column-header">
-        <h3 className="column-title">{column.title}</h3>
-        <div className="column-header-actions">
+        <div className="column-title-wrap">
+          <h3 className="column-title">{column.title}</h3>
           {showCount ? (
             <span className="column-count" aria-label={`${column.tasks.length} tasks`}>
               {column.tasks.length}
             </span>
           ) : null}
-          <button
-            type="button"
-            className="icon-button column-add-button"
-            onClick={() => onAdd(column.id)}
-            aria-label={`Add task to ${column.title}`}
-          >
-            <PlusIcon width={16} height={16} />
-          </button>
         </div>
+        <button
+          type="button"
+          className="icon-button column-add-button"
+          onClick={() => onAdd(column.id)}
+          aria-label={`Add task to ${column.title}`}
+        >
+          <PlusIcon width={16} height={16} />
+        </button>
       </header>
 
       <div className="column-tasks">
         {column.tasks.length === 0 ? (
           <div className="column-empty">
-            <p className="column-empty-title">No tasks yet</p>
-            <p className="column-empty-message">Add a task to get started.</p>
+            <p className="column-empty-title">{filtersActive ? 'No matching tasks' : 'No tasks here'}</p>
+            <p className="column-empty-message">
+              {filtersActive ? 'Adjust your search or filters.' : 'Add a task to get started.'}
+            </p>
           </div>
         ) : (
           column.tasks.map((task) => (

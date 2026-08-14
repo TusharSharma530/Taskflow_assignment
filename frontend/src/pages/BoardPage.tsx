@@ -18,8 +18,14 @@ export function BoardPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<Filter>('ALL');
+  const [priority, setPriority] = useState<Filter>('ALL');
+  const [status, setStatus] = useState<string>('ALL');
+  const [refreshing, setRefreshing] = useState(false);
   const [showTaskCounts] = useLocalStorage<boolean>('taskflow-show-task-counts', true);
+
+  const statuses = useMemo(() => board?.columns.map((column) => column.title) ?? [], [board]);
+
+  const filtersActive = search.trim() !== '' || priority !== 'ALL' || status !== 'ALL';
 
   const visibleColumns = useMemo(() => {
     if (!board) {
@@ -29,14 +35,24 @@ export function BoardPage() {
     return board.columns.map((column) => ({
       ...column,
       tasks: column.tasks.filter((task) => {
-        const matchesPriority = filter === 'ALL' || task.priority === filter;
+        const matchesPriority = priority === 'ALL' || task.priority === priority;
+        const matchesStatus = status === 'ALL' || column.title === status;
         const matchesSearch = !query || task.title.toLowerCase().includes(query);
-        return matchesPriority && matchesSearch;
+        return matchesPriority && matchesStatus && matchesSearch;
       }),
     }));
-  }, [board, search, filter]);
+  }, [board, search, priority, status]);
 
   const totalVisible = visibleColumns.reduce((sum, column) => sum + column.tasks.length, 0);
+
+  const summary = useMemo(() => {
+    if (!board) {
+      return null;
+    }
+    const total = board.columns.reduce((sum, column) => sum + column.tasks.length, 0);
+    const parts = board.columns.map((column) => `${column.tasks.length} ${column.title}`);
+    return `${total} tasks · ${parts.join(' · ')}`;
+  }, [board]);
 
   async function handleMove(task: Task, columnId: number): Promise<void> {
     try {
@@ -47,6 +63,24 @@ export function BoardPage() {
     }
   }
 
+  async function handleRefresh(): Promise<void> {
+    if (refreshing) {
+      return;
+    }
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  function clearFilters(): void {
+    setSearch('');
+    setPriority('ALL');
+    setStatus('ALL');
+  }
+
   const columns = board?.columns ?? [];
 
   return (
@@ -54,7 +88,7 @@ export function BoardPage() {
       <header className="page-header">
         <div>
           <h1 className="page-title">TaskFlow Board</h1>
-          <p className="page-subtitle">Manage your team's tasks and keep work moving.</p>
+          <p className="page-subtitle">Manage your tasks, track progress, and keep work moving.</p>
         </div>
         <button
           type="button"
@@ -62,30 +96,59 @@ export function BoardPage() {
           onClick={() => navigate('/tasks/new')}
         >
           <PlusIcon width={16} height={16} />
-          New Task
+          New task
         </button>
       </header>
 
       {board ? (
-        <div className="toolbar">
-          <SearchInput value={search} onChange={setSearch} />
-          <PriorityFilter value={filter} onChange={setFilter} label="" id="board-priority-filter" />
-          <button
-            type="button"
-            className="icon-button toolbar-refresh"
-            onClick={() => void refresh()}
-            aria-label="Refresh board"
-            title="Refresh"
-          >
-            <RefreshIcon width={17} height={17} />
-          </button>
-        </div>
+        <>
+          <p className="board-summary">{summary}</p>
+
+          <div className="toolbar board-toolbar">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search tasks by title..." />
+            <PriorityFilter value={priority} onChange={setPriority} label="" id="board-priority-filter" />
+            <div className="select-control">
+              <select
+                id="board-status-filter"
+                value={status}
+                aria-label="Filter by status"
+                onChange={(event) => setStatus(event.target.value)}
+              >
+                <option value="ALL">All statuses</option>
+                {statuses.map((title) => (
+                  <option key={title} value={title}>
+                    {title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              className={`icon-button toolbar-refresh${refreshing ? ' refreshing' : ''}`}
+              onClick={() => void handleRefresh()}
+              aria-label="Refresh board"
+              title="Refresh"
+              disabled={refreshing}
+            >
+              <RefreshIcon width={17} height={17} />
+            </button>
+            {filtersActive ? (
+              <button type="button" className="button button-ghost clear-filters" onClick={clearFilters}>
+                Clear filters
+              </button>
+            ) : null}
+          </div>
+        </>
       ) : null}
 
       {loading ? (
         <BoardLoading />
       ) : error ? (
-        <ErrorState message={error} onRetry={() => void refresh()} />
+        <ErrorState
+          title="Unable to load your board"
+          message="Something went wrong while loading your tasks."
+          onRetry={() => void refresh()}
+        />
       ) : !board ? (
         <div className="page-empty">
           <EmptyState
@@ -103,21 +166,14 @@ export function BoardPage() {
             }
           />
         </div>
-      ) : totalVisible === 0 ? (
+      ) : filtersActive && totalVisible === 0 ? (
         <div className="page-empty">
           <EmptyState
             icon={<ListIcon width={28} height={28} />}
-            title="No tasks found"
-            message="Try changing your search or filter."
+            title="No matching tasks"
+            message="Try changing your search or filters."
             action={
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => {
-                  setSearch('');
-                  setFilter('ALL');
-                }}
-              >
+              <button type="button" className="button button-secondary" onClick={clearFilters}>
                 Clear filters
               </button>
             }
@@ -131,6 +187,7 @@ export function BoardPage() {
               column={column}
               allColumns={columns}
               showCount={showTaskCounts}
+              filtersActive={filtersActive}
               onAdd={(columnId) => navigate(`/tasks/new?column=${columnId}`)}
               onEdit={(task) => navigate(`/tasks/${task.id}/edit`)}
               onDelete={(task) => navigate(`/tasks/${task.id}/delete`)}
