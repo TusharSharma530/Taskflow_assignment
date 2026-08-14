@@ -9,8 +9,7 @@ import { ErrorState } from '../components/ErrorState';
 import { PriorityBadge } from '../components/PriorityBadge';
 import { PriorityFilter } from '../components/PriorityFilter';
 import { SearchInput } from '../components/SearchInput';
-import { TaskCardMenu } from '../components/TaskCardMenu';
-import { ListIcon, PlusIcon, RefreshIcon } from '../components/icons';
+import { EditIcon, ListIcon, PlusIcon, RefreshIcon, TrashIcon } from '../components/icons';
 
 function formatCreated(iso: string): string {
   const date = new Date(iso);
@@ -188,9 +187,7 @@ export function AllTasksPage() {
                 <th>Priority</th>
                 <th>Status</th>
                 <th>Created</th>
-                <th>
-                  <span className="visually-hidden">Actions</span>
-                </th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -264,9 +261,7 @@ export function AllTasksPage() {
                   <th scope="col">Priority</th>
                   <th scope="col">Status</th>
                   <th scope="col">Created</th>
-                  <th scope="col" aria-label="Actions">
-                    <span className="visually-hidden">Actions</span>
-                  </th>
+                  <th scope="col" aria-label="Actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,13 +296,50 @@ export function AllTasksPage() {
                       </span>
                     </td>
                     <td className="table-actions">
-                      <TaskCardMenu
-                        task={task}
-                        columns={board?.columns ?? []}
-                        onEdit={() => editTask(task)}
-                        onDelete={() => deleteTask(task)}
-                        onMove={(columnId) => void handleMove(task, columnId)}
-                      />
+                      <div className="task-actions">
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => editTask(task)}
+                          aria-label={`Edit task "${task.title}"`}
+                          title="Edit task"
+                        >
+                          <EditIcon width={15} height={15} />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button icon-button-danger"
+                          onClick={() => deleteTask(task)}
+                          aria-label={`Delete task "${task.title}"`}
+                          title="Delete task"
+                        >
+                          <TrashIcon width={15} height={15} />
+                        </button>
+                        <select
+                          className="move-select"
+                          value=""
+                          aria-label={`Move task "${task.title}" to another column`}
+                          title="Move to another column"
+                          disabled={(board?.columns ?? []).filter((column) => column.id !== task.columnId).length === 0}
+                          onChange={(event) => {
+                            const columnId = Number(event.target.value);
+                            if (Number.isInteger(columnId)) {
+                              void handleMove(task, columnId);
+                            }
+                          }}
+                        >
+                          <option value="" disabled>
+                            Move to
+                          </option>
+                          {(board?.columns ?? [])
+                            .filter((column) => column.id !== task.columnId)
+                            .map((column) => (
+                              <option key={column.id} value={column.id}>
+                                {column.title}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))}

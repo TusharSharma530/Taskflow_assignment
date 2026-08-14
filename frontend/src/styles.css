@@ -1064,10 +1064,11 @@ textarea {
   width: 100%;
   border-collapse: collapse;
   min-width: 640px;
+  table-layout: fixed;
 }
 
 .tasks-table th {
-  padding: 12px 16px;
+  padding: 8px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
@@ -1079,7 +1080,7 @@ textarea {
 }
 
 .tasks-table td {
-  padding: 14px 16px;
+  padding: 8px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
   font-size: 13px;
@@ -1112,7 +1113,7 @@ textarea {
 .table-task-desc {
   font-size: 12px;
   color: var(--text-muted);
-  max-width: 380px;
+  max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1164,8 +1165,70 @@ textarea {
 }
 
 .table-actions {
-  width: 44px;
+  width: 176px;
   text-align: right;
+}
+
+.tasks-table th:last-child {
+  width: 176px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.task-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.task-actions .icon-button {
+  width: 30px;
+  height: 30px;
+}
+
+.task-actions .icon-button-danger:hover {
+  color: var(--danger);
+}
+
+.move-select {
+  width: auto;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.move-select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.move-select:not(:disabled):hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.tasks-table th:first-child,
+.tasks-table td:first-child {
+  width: 300px;
+}
+
+.tasks-table th:nth-child(2),
+.tasks-table td:nth-child(2) {
+  width: 96px;
+}
+
+.tasks-table th:nth-child(3),
+.tasks-table td:nth-child(3) {
+  width: 132px;
+}
+
+.tasks-table th:nth-child(4),
+.tasks-table td:nth-child(4) {
+  width: 112px;
 }
 
 /* All tasks page ------------------------------------------------------------ */
@@ -1239,17 +1302,6 @@ textarea {
 
 .table-skeleton .skeleton-line {
   width: auto;
-}
-
-@media (hover: hover) {
-  .tasks-table .task-menu-button {
-    opacity: 0.4;
-  }
-
-  .tasks-table tr:hover .task-menu-button,
-  .tasks-table .task-menu-button:focus-visible {
-    opacity: 1;
-  }
 }
 
 @media (min-width: 1024px) {
@@ -2483,6 +2535,17 @@ textarea {
     border: none;
   }
 
+  .tasks-table th:first-child,
+  .tasks-table td:first-child,
+  .tasks-table th:nth-child(2),
+  .tasks-table td:nth-child(2),
+  .tasks-table th:nth-child(3),
+  .tasks-table td:nth-child(3),
+  .tasks-table th:nth-child(4),
+  .tasks-table td:nth-child(4) {
+    width: auto;
+  }
+
   .tasks-table td[data-label='Priority'],
   .tasks-table td[data-label='Status'] {
     display: inline-flex;
@@ -2492,10 +2555,9 @@ textarea {
   }
 
   .tasks-table .table-actions {
-    position: absolute;
-    top: 4px;
-    right: 6px;
-    width: auto;
+    position: static;
+    width: 100%;
+    margin-top: 4px;
   }
 }
 
