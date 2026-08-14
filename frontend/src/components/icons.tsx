@@ -111,6 +111,14 @@ export function ChevronRightIcon(props: IconProps) {
   );
 }
 
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M19 12H5M11 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
 export function ArrangeIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
@@ -166,6 +174,55 @@ export function CheckIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
       <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+export function InfoIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 16v-4M12 8h.01" />
+    </svg>
+  );
+}
+
+export function PaletteIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 22a10 10 0 1 1 10-10c0 2.5-1.8 3.5-3.4 3.5h-2.4c-1.1 0-2 .9-2 2 0 .6.2 1.1.6 1.5.4.4.6.9.6 1.5a2.4 2.4 0 0 1-2.4 1.5Z" />
+      <circle cx="7.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="7" r="1" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="10" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function BellIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
+}
+
+export function CommandIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="6" y="3" width="12" height="8" rx="2" />
+      <rect x="6" y="13" width="12" height="8" rx="2" />
+      <path d="M3 7v0M13 7h8M5 7h0" />
+    </svg>
+  );
+}
+
+export function PackageIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+      <path d="m3 8 9 5 9-5M12 13v8" />
     </svg>
   );
 }

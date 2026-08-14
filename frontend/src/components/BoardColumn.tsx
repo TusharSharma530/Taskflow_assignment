@@ -9,6 +9,7 @@ interface BoardColumnProps {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onMove: (task: Task, columnId: number) => void;
+  showCount?: boolean;
 }
 
 export function BoardColumn({
@@ -18,15 +19,18 @@ export function BoardColumn({
   onEdit,
   onDelete,
   onMove,
+  showCount = true,
 }: BoardColumnProps) {
   return (
     <section className="column" aria-label={column.title}>
       <header className="column-header">
         <h3 className="column-title">{column.title}</h3>
         <div className="column-header-actions">
-          <span className="column-count" aria-label={`${column.tasks.length} tasks`}>
-            {column.tasks.length}
-          </span>
+          {showCount ? (
+            <span className="column-count" aria-label={`${column.tasks.length} tasks`}>
+              {column.tasks.length}
+            </span>
+          ) : null}
           <button
             type="button"
             className="icon-button column-add-button"

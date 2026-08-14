@@ -9,6 +9,14 @@ export function listTasks(db: Database.Database): TaskListItem[] {
   return taskRepo.listTasks(db);
 }
 
+export function getTask(db: Database.Database, taskId: number): TaskRow {
+  const task = taskRepo.getTaskById(db, taskId);
+  if (!task) {
+    throw notFound('Task not found');
+  }
+  return task;
+}
+
 export function createTask(
   db: Database.Database,
   input: ValidatedTaskInput,

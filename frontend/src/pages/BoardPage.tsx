@@ -1,33 +1,25 @@
 import { useMemo, useState } from 'react';
-import type { Filter, Priority, Task, TaskInput, TaskUpdate } from '../types';
+import { useNavigate } from 'react-router-dom';
+import type { Filter, Task } from '../types';
 import { useBoard } from '../hooks/useBoard';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useToast } from '../hooks/useToast';
 import { Board } from '../components/Board';
 import { BoardColumn } from '../components/BoardColumn';
 import { BoardLoading } from '../components/BoardLoading';
-import { DeleteTaskDialog } from '../components/DeleteTaskDialog';
-import { EditTaskModal } from '../components/EditTaskModal';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { PriorityFilter } from '../components/PriorityFilter';
 import { SearchInput } from '../components/SearchInput';
-import { TaskModal } from '../components/TaskModal';
 import { ListIcon, PlusIcon, RefreshIcon } from '../components/icons';
 
-interface BoardPageState {
-  dialog: { type: 'create'; columnId: number } | { type: 'edit'; task: Task } | null;
-  deleting: Task | null;
-}
-
 export function BoardPage() {
-  const { board, loading, error, refresh, createTask, updateTask, deleteTask, moveTask, columnTitleById } =
-    useBoard();
+  const { board, loading, error, refresh, moveTask, columnTitleById } = useBoard();
   const toast = useToast();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('ALL');
-  const [state, setState] = useState<BoardPageState>({ dialog: null, deleting: null });
-  const [defaultPriority] = useLocalStorage<Priority>('taskflow-default-priority', 'MEDIUM');
+  const [showTaskCounts] = useLocalStorage<boolean>('taskflow-show-task-counts', true);
 
   const visibleColumns = useMemo(() => {
     if (!board) {
@@ -46,39 +38,6 @@ export function BoardPage() {
 
   const totalVisible = visibleColumns.reduce((sum, column) => sum + column.tasks.length, 0);
 
-  async function handleCreate(input: TaskInput): Promise<void> {
-    try {
-      await createTask(input);
-      setState((current) => ({ ...current, dialog: null }));
-      toast.success('Task created successfully');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Unable to create the task.');
-      throw err;
-    }
-  }
-
-  async function handleUpdate(task: Task, input: TaskUpdate): Promise<void> {
-    try {
-      await updateTask(task.id, input);
-      setState((current) => ({ ...current, dialog: null }));
-      toast.success('Task updated');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Unable to save changes.');
-      throw err;
-    }
-  }
-
-  async function handleDelete(task: Task): Promise<void> {
-    try {
-      await deleteTask(task.id);
-      setState((current) => ({ ...current, deleting: null }));
-      toast.success('Task deleted');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Unable to delete the task.');
-      throw err;
-    }
-  }
-
   async function handleMove(task: Task, columnId: number): Promise<void> {
     try {
       await moveTask(task.id, columnId);
@@ -89,9 +48,6 @@ export function BoardPage() {
   }
 
   const columns = board?.columns ?? [];
-  const creatingColumnId = state.dialog?.type === 'create' ? state.dialog.columnId : null;
-  const editingTask = state.dialog?.type === 'edit' ? state.dialog.task : null;
-  const deletingTask = state.deleting;
 
   return (
     <div className="page">
@@ -103,7 +59,7 @@ export function BoardPage() {
         <button
           type="button"
           className="button button-primary button-new-task"
-          onClick={() => setState((current) => ({ ...current, dialog: { type: 'create', columnId: columns[0]?.id ?? 0 } }))}
+          onClick={() => navigate('/tasks/new')}
         >
           <PlusIcon width={16} height={16} />
           New Task
@@ -139,7 +95,7 @@ export function BoardPage() {
               <button
                 type="button"
                 className="button button-primary"
-                onClick={() => setState((current) => ({ ...current, dialog: { type: 'create', columnId: 0 } }))}
+                onClick={() => navigate('/tasks/new')}
               >
                 <PlusIcon width={16} height={16} />
                 Create task
@@ -174,40 +130,15 @@ export function BoardPage() {
               key={column.id}
               column={column}
               allColumns={columns}
-              onAdd={(columnId) =>
-                setState((current) => ({ ...current, dialog: { type: 'create', columnId } }))
-              }
-              onEdit={(task) => setState((current) => ({ ...current, dialog: { type: 'edit', task } }))}
-              onDelete={(task) => setState((current) => ({ ...current, deleting: task }))}
+              showCount={showTaskCounts}
+              onAdd={(columnId) => navigate(`/tasks/new?column=${columnId}`)}
+              onEdit={(task) => navigate(`/tasks/${task.id}/edit`)}
+              onDelete={(task) => navigate(`/tasks/${task.id}/delete`)}
               onMove={handleMove}
             />
           ))}
         </Board>
       )}
-
-      {creatingColumnId !== null ? (
-        <TaskModal
-          columns={columns}
-          defaultColumnId={creatingColumnId}
-          initialPriority={defaultPriority}
-          onSubmit={handleCreate}
-          onClose={() => setState((current) => ({ ...current, dialog: null }))}
-        />
-      ) : editingTask ? (
-        <EditTaskModal
-          task={editingTask}
-          onSubmit={(input) => handleUpdate(editingTask, input)}
-          onClose={() => setState((current) => ({ ...current, dialog: null }))}
-        />
-      ) : null}
-
-      {deletingTask ? (
-        <DeleteTaskDialog
-          task={deletingTask}
-          onConfirm={() => handleDelete(deletingTask)}
-          onClose={() => setState((current) => ({ ...current, deleting: null }))}
-        />
-      ) : null}
     </div>
   );
 }

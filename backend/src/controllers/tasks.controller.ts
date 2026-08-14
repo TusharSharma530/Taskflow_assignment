@@ -14,6 +14,13 @@ export function listTasksController(db: Database.Database) {
   };
 }
 
+export function getTaskController(db: Database.Database) {
+  return (req: Request, res: Response): void => {
+    const taskId = parseId(req.params.taskId, 'taskId');
+    res.json(taskService.getTask(db, taskId));
+  };
+}
+
 export function createTaskController(db: Database.Database) {
   return (req: Request, res: Response): void => {
     const result = validateCreateTask(req.body);

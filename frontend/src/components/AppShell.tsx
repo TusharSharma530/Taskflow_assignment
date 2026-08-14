@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { MenuIcon, TaskFlowLogo } from './icons';
+import { ShortcutsDialog } from './ShortcutsDialog';
 import { Sidebar } from './Sidebar';
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const { showShortcuts, setShowShortcuts } = useGlobalShortcuts();
 
   useEffect(() => {
     setMenuOpen(false);
@@ -43,6 +46,8 @@ export function AppShell() {
       <main className="content">
         <Outlet />
       </main>
+
+      <ShortcutsDialog open={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>
   );
 }

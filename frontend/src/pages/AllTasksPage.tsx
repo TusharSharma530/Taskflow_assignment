@@ -1,20 +1,15 @@
 import { useMemo, useState } from 'react';
-import type { Filter, Task, TaskUpdate } from '../types';
+import { useNavigate } from 'react-router-dom';
+import type { Filter } from '../types';
 import { useBoard } from '../hooks/useBoard';
 import { useToast } from '../hooks/useToast';
-import { DeleteTaskDialog } from '../components/DeleteTaskDialog';
-import { EditTaskModal } from '../components/EditTaskModal';
 import { EmptyState } from '../components/EmptyState';
+import { ErrorState } from '../components/ErrorState';
 import { PriorityBadge } from '../components/PriorityBadge';
 import { PriorityFilter } from '../components/PriorityFilter';
 import { SearchInput } from '../components/SearchInput';
 import { TaskCardMenu } from '../components/TaskCardMenu';
-import { ListIcon } from '../components/icons';
-
-interface AllTasksState {
-  editing: Task | null;
-  deleting: Task | null;
-}
+import { ListIcon, RefreshIcon } from '../components/icons';
 
 function formatCreated(iso: string): string {
   const date = new Date(iso);
@@ -25,12 +20,12 @@ function formatCreated(iso: string): string {
 }
 
 export function AllTasksPage() {
-  const { tasks, loading, error, refresh, updateTask, deleteTask, board } = useBoard();
+  const { tasks, loading, error, refresh, board, moveTask, columnTitleById } = useBoard();
   const toast = useToast();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [priority, setPriority] = useState<Filter>('ALL');
   const [status, setStatus] = useState<string>('ALL');
-  const [state, setState] = useState<AllTasksState>({ editing: null, deleting: null });
 
   const statuses = useMemo(() => {
     const fromBoard = board?.columns.map((column) => column.title);
@@ -49,27 +44,20 @@ export function AllTasksPage() {
     });
   }, [tasks, search, priority, status]);
 
-  async function handleUpdate(task: Task, input: TaskUpdate): Promise<void> {
+  async function handleMove(task: { id: number; columnId: number }, columnId: number): Promise<void> {
     try {
-      await updateTask(task.id, input);
-      setState({ editing: null, deleting: null });
-      toast.success('Task updated');
+      await moveTask(task.id, columnId);
+      toast.success(`Task moved to ${columnTitleById(columnId) || 'new column'}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Unable to save changes.');
-      throw err;
+      toast.error(err instanceof Error ? err.message : 'Unable to move the task.');
     }
   }
 
-  async function handleDelete(task: Task): Promise<void> {
-    try {
-      await deleteTask(task.id);
-      setState({ editing: null, deleting: null });
-      toast.success('Task deleted');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Unable to delete the task.');
-      throw err;
-    }
-  }
+  const editTask = (task: { id: number }): void =>
+    navigate(`/tasks/${task.id}/edit`, { state: { from: '/tasks' } });
+
+  const deleteTask = (task: { id: number }): void =>
+    navigate(`/tasks/${task.id}/delete`, { state: { from: '/tasks' } });
 
   return (
     <div className="page">
@@ -104,9 +92,7 @@ export function AllTasksPage() {
           aria-label="Refresh tasks"
           title="Refresh"
         >
-          <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-            <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" />
-          </svg>
+          <RefreshIcon width={17} height={17} />
         </button>
       </div>
 
@@ -115,14 +101,9 @@ export function AllTasksPage() {
           <div className="skeleton skeleton-line" style={{ width: '100%', height: 360 }} />
         </div>
       ) : error ? (
-        <EmptyState
-          title="Something went wrong"
+        <ErrorState
           message="We couldn't load your tasks. Please try again."
-          action={
-            <button type="button" className="button button-secondary" onClick={() => void refresh()}>
-              Try again
-            </button>
-          }
+          onRetry={() => void refresh()}
         />
       ) : visible.length === 0 ? (
         <div className="page-empty">
@@ -131,7 +112,7 @@ export function AllTasksPage() {
             title={tasks.length === 0 ? 'No tasks yet' : 'No tasks found'}
             message={
               tasks.length === 0
-                ? 'Create your first task on the board to see it here.'
+                ? 'Create your first task to see it here.'
                 : 'Try changing your search or filters.'
             }
           />
@@ -176,9 +157,9 @@ export function AllTasksPage() {
                         task={task}
                         columns={board?.columns ?? []}
                         variant="row"
-                        onEdit={() => setState({ editing: task, deleting: null })}
-                        onDelete={() => setState({ editing: null, deleting: task })}
-                        onMove={() => undefined}
+                        onEdit={() => editTask(task)}
+                        onDelete={() => deleteTask(task)}
+                        onMove={(columnId) => void handleMove(task, columnId)}
                       />
                     </td>
                   </tr>
@@ -188,22 +169,6 @@ export function AllTasksPage() {
           </div>
         </div>
       )}
-
-      {state.editing ? (
-        <EditTaskModal
-          task={state.editing}
-          onSubmit={(input) => handleUpdate(state.editing!, input)}
-          onClose={() => setState({ editing: null, deleting: null })}
-        />
-      ) : null}
-
-      {state.deleting ? (
-        <DeleteTaskDialog
-          task={state.deleting}
-          onConfirm={() => handleDelete(state.deleting!)}
-          onClose={() => setState({ editing: null, deleting: null })}
-        />
-      ) : null}
     </div>
   );
 }

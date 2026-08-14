@@ -60,6 +60,10 @@ export function fetchTasks(): Promise<TaskListItem[]> {
   return request<TaskListItem[]>('/tasks');
 }
 
+export function fetchTask(taskId: number): Promise<Task> {
+  return request<Task>(`/tasks/${taskId}`);
+}
+
 export function createTask(input: TaskInput): Promise<Task> {
   return request<Task>('/tasks', {
     method: 'POST',

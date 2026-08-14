@@ -1,15 +1,18 @@
-import { useState } from 'react';
-import type { Column, Priority, Task, TaskInput, TaskUpdate } from '../types';
+import { useEffect, useState } from 'react';
+import type { Column, Priority, Task, TaskInput } from '../types';
 import { isPriority } from '../types';
 
 interface TaskFormFieldsProps {
   mode: 'create' | 'edit';
-  columns?: Column[];
+  columns: Column[];
   task?: Task;
   defaultColumnId?: number;
   initialPriority?: Priority;
+  titlePlaceholder?: string;
+  descriptionPlaceholder?: string;
   onCancel: () => void;
-  onSubmit: (input: TaskInput | TaskUpdate) => Promise<void>;
+  onSubmit: (input: TaskInput) => Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export function TaskFormFields({
@@ -18,8 +21,11 @@ export function TaskFormFields({
   task,
   defaultColumnId,
   initialPriority,
+  titlePlaceholder = 'e.g. Build authentication API',
+  descriptionPlaceholder = 'Add more details about this task...',
   onCancel,
   onSubmit,
+  onDirtyChange,
 }: TaskFormFieldsProps) {
   const [title, setTitle] = useState(task?.title ?? '');
   const [description, setDescription] = useState(task?.description ?? '');
@@ -31,35 +37,36 @@ export function TaskFormFields({
   const [apiError, setApiError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const dirty =
+    mode === 'edit' && task
+      ? title !== task.title ||
+        description !== (task.description ?? '') ||
+        priority !== task.priority ||
+        columnId !== task.columnId
+      : false;
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
   function handleSubmit(event: React.FormEvent): void {
     event.preventDefault();
-    const trimmed = title.trim();
-    if (!trimmed) {
-      setValidationError('Title is required.');
+    if (title.trim().length === 0) {
+      setValidationError(title.length === 0 ? 'Title is required.' : 'Title cannot be empty.');
+      return;
+    }
+    if (!columns.some((column) => column.id === columnId)) {
+      setValidationError('Please choose a column.');
       return;
     }
     setValidationError(null);
 
-    if (mode === 'create') {
-      if (!columns.some((column) => column.id === columnId)) {
-        setValidationError('Please choose a column.');
-        return;
-      }
-    }
-
-    const input: TaskInput | TaskUpdate =
-      mode === 'create'
-        ? {
-            columnId,
-            title: trimmed,
-            description: description.trim() || null,
-            priority,
-          }
-        : {
-            title: trimmed,
-            description: description.trim() || null,
-            priority,
-          };
+    const input: TaskInput = {
+      columnId,
+      title: title.trim(),
+      description: description.trim() || null,
+      priority,
+    };
 
     setApiError(null);
     setSaving(true);
@@ -81,10 +88,16 @@ export function TaskFormFields({
           type="text"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="What needs to be done?"
+          placeholder={titlePlaceholder}
+          aria-invalid={validationError ? true : undefined}
+          aria-describedby={validationError ? 'task-title-error' : undefined}
           autoFocus
         />
-        {validationError ? <p className="form-error">{validationError}</p> : null}
+        {validationError ? (
+          <p id="task-title-error" className="form-error" role="alert">
+            {validationError}
+          </p>
+        ) : null}
       </div>
 
       <div className="form-field">
@@ -95,8 +108,8 @@ export function TaskFormFields({
           id="task-description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="Optional details"
-          rows={3}
+          placeholder={descriptionPlaceholder}
+          rows={4}
         />
       </div>
 
@@ -120,30 +133,35 @@ export function TaskFormFields({
           </select>
         </div>
 
-        {mode === 'create' ? (
-          <div className="form-field">
-            <label className="form-label" htmlFor="task-column">
-              Column
-            </label>
-            <select
-              id="task-column"
-              value={columnId}
-              onChange={(event) => setColumnId(Number(event.target.value))}
-            >
+        <div className="form-field">
+          <label className="form-label" htmlFor="task-column">
+            {mode === 'edit' ? 'Current column' : 'Column'}
+          </label>
+          <select
+            id="task-column"
+            value={columnId}
+            onChange={(event) => setColumnId(Number(event.target.value))}
+          >
+            {columns.length === 0 ? (
               <option value={0} disabled>
-                Choose a column
+                No columns available
               </option>
-              {columns.map((column) => (
+            ) : (
+              columns.map((column) => (
                 <option key={column.id} value={column.id}>
                   {column.title}
                 </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
+              ))
+            )}
+          </select>
+        </div>
       </div>
 
-      {apiError ? <p className="form-error">{apiError}</p> : null}
+      {apiError ? (
+        <p className="form-error" role="alert">
+          {apiError}
+        </p>
+      ) : null}
 
       <div className="modal-actions">
         <button
@@ -155,7 +173,13 @@ export function TaskFormFields({
           Cancel
         </button>
         <button type="submit" className="button button-primary" disabled={saving}>
-          {saving ? 'Saving...' : mode === 'create' ? 'Create task' : 'Save changes'}
+          {saving
+            ? mode === 'create'
+              ? 'Creating task...'
+              : 'Saving changes...'
+            : mode === 'create'
+              ? 'Create task'
+              : 'Save changes'}
         </button>
       </div>
     </form>

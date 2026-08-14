@@ -113,6 +113,34 @@ describe('POST /api/tasks', () => {
   });
 });
 
+describe('GET /api/tasks/:taskId', () => {
+  let ctx: ReturnType<typeof createTestApp>;
+  let app: Express;
+
+  beforeEach(() => {
+    ctx = createTestApp();
+    app = ctx.app;
+  });
+
+  it('returns a single task', async () => {
+    const response = await request(app).get('/api/tasks/1');
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 1,
+      title: expect.any(String),
+      priority: expect.any(String),
+      columnId: expect.any(Number),
+      createdAt: expect.any(String),
+    });
+  });
+
+  it('returns 404 for a nonexistent task', async () => {
+    const response = await request(app).get('/api/tasks/9999');
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Task not found');
+  });
+});
+
 describe('PUT /api/tasks/:taskId', () => {
   let ctx: ReturnType<typeof createTestApp>;
   let app: Express;
