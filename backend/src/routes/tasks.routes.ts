@@ -1,0 +1,19 @@
+import { Router } from 'express';
+import type Database from 'better-sqlite3';
+import {
+  createTaskController,
+  deleteTaskController,
+  moveTaskController,
+  updateTaskController,
+} from '../controllers/tasks.controller';
+
+export function tasksRouter(db: Database.Database): Router {
+  const router = Router();
+
+  router.post('/tasks', createTaskController(db));
+  router.put('/tasks/:taskId', updateTaskController(db));
+  router.delete('/tasks/:taskId', deleteTaskController(db));
+  router.patch('/tasks/:taskId/move', moveTaskController(db));
+
+  return router;
+}

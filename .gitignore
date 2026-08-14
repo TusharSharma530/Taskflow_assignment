@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database files
+database/*.db
+database/*.db-journal
+database/*.db-wal
+database/*.db-shm
+
+# Test / coverage output
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Vite / CRA
+frontend/dist/
