@@ -116,17 +116,38 @@ Board
 
 ## Setup
 
-Requirements: **Node.js 20+** (developed against Node 24), npm, and a running
-**MySQL 8** instance.
+### Prerequisites
 
-From a fresh clone:
+- **Node.js 20+** (developed against Node 24) and npm
+- **MySQL 8** running locally (the backend connects as `DB_USER` / `DB_PASSWORD`)
+
+### Step-by-step
+
+**1. Clone the repository**
 
 ```bash
 git clone <your-repo-url> taskflow
 cd taskflow
-cp .env.example .env     # then set DB_PASSWORD (and DB_NAME if you prefer)
+```
+
+**2. Install dependencies**
+
+```bash
 npm install
-npm run seed             # optional: creates/resets the demo board
+```
+
+**3. Configure the environment**
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set `DB_PASSWORD` to your MySQL user's password (defaults:
+`DB_HOST=localhost`, `DB_PORT=3306`, `DB_USER=root`, `DB_NAME=taskflow`).
+
+**4. Start the app**
+
+```bash
 npm run dev
 ```
 
@@ -135,28 +156,25 @@ npm run dev
 - backend API → <http://localhost:3000> (health check: `GET /api/health`)
 - frontend SPA → <http://localhost:5173> (proxies `/api` to the backend)
 
-The backend creates the configured database (if missing), applies the schema,
-and seeds the demo board on first start — so a fresh clone never appears empty.
-To reset the database to the demo state at any time:
+On first start the backend **creates the configured database (if missing),
+applies the schema, and seeds a demo board automatically** — a fresh clone never
+appears empty. To reset the database to the demo state at any time:
 
 ```bash
 npm run seed
 ```
 
-Other useful scripts:
+### Useful scripts
 
 ```bash
 npm test            # run backend tests (also: npm run test:watch)
 npm run build       # type-check + production-build the frontend
+npm run seed        # create/reset the demo board
 ```
 
 ### Environment variables
 
-Copy `.env.example` to `.env` and set at least `DB_PASSWORD`:
-
-```bash
-cp .env.example .env
-```
+Set at least `DB_PASSWORD` in `.env`:
 
 | Variable        | Default       | Description                                    |
 | --------------- | ------------- | ---------------------------------------------- |
