@@ -7,6 +7,7 @@ import { useToast } from '../hooks/useToast';
 import { Board } from '../components/Board';
 import { BoardColumn } from '../components/BoardColumn';
 import { BoardLoading } from '../components/BoardLoading';
+import { DeleteTaskDialog } from '../components/DeleteTaskDialog';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { PriorityFilter } from '../components/PriorityFilter';
@@ -14,13 +15,14 @@ import { SearchInput } from '../components/SearchInput';
 import { ListIcon, PlusIcon, RefreshIcon } from '../components/icons';
 
 export function BoardPage() {
-  const { board, loading, error, refresh, moveTask, columnTitleById } = useBoard();
+  const { board, loading, error, refresh, moveTask, columnTitleById, deleteTask } = useBoard();
   const toast = useToast();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [priority, setPriority] = useState<Filter>('ALL');
   const [status, setStatus] = useState<string>('ALL');
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [showTaskCounts] = useLocalStorage<boolean>('taskflow-show-task-counts', true);
 
   const statuses = useMemo(() => board?.columns.map((column) => column.title) ?? [], [board]);
@@ -72,6 +74,19 @@ export function BoardPage() {
       await refresh();
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  async function confirmDelete(): Promise<void> {
+    if (!deleteTarget) {
+      return;
+    }
+    try {
+      await deleteTask(deleteTarget.id);
+      toast.success('Task deleted');
+      setDeleteTarget(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't delete the task. Please try again.");
     }
   }
 
@@ -190,12 +205,21 @@ export function BoardPage() {
               filtersActive={filtersActive}
               onAdd={(columnId) => navigate(`/tasks/new?column=${columnId}`)}
               onEdit={(task) => navigate(`/tasks/${task.id}/edit`)}
-              onDelete={(task) => navigate(`/tasks/${task.id}/delete`)}
+              onDelete={setDeleteTarget}
               onMove={handleMove}
             />
           ))}
         </Board>
       )}
+
+      {deleteTarget ? (
+        <DeleteTaskDialog
+          task={deleteTarget}
+          columnTitle={columnTitleById(deleteTarget.columnId)}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
     </div>
   );
 }

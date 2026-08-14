@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Filter } from '../types';
+import type { Filter, TaskListItem } from '../types';
 import { useBoard } from '../hooks/useBoard';
 import { useToast } from '../hooks/useToast';
 import { statusTone } from '../utils/taskStatus';
+import { DeleteTaskDialog } from '../components/DeleteTaskDialog';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { PriorityBadge } from '../components/PriorityBadge';
@@ -28,13 +29,14 @@ function formatCreatedFull(iso: string): string {
 }
 
 export function AllTasksPage() {
-  const { tasks, loading, error, refresh, board, moveTask, columnTitleById } = useBoard();
+  const { tasks, loading, error, refresh, board, moveTask, columnTitleById, deleteTask } = useBoard();
   const toast = useToast();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [priority, setPriority] = useState<Filter>('ALL');
   const [status, setStatus] = useState<string>('ALL');
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<TaskListItem | null>(null);
 
   const statuses = useMemo(() => {
     const fromBoard = board?.columns.map((column) => column.title);
@@ -99,8 +101,18 @@ export function AllTasksPage() {
   const editTask = (task: { id: number }): void =>
     navigate(`/tasks/${task.id}/edit`, { state: { from: '/tasks' } });
 
-  const deleteTask = (task: { id: number }): void =>
-    navigate(`/tasks/${task.id}/delete`, { state: { from: '/tasks' } });
+  async function confirmDelete(): Promise<void> {
+    if (!deleteTarget) {
+      return;
+    }
+    try {
+      await deleteTask(deleteTarget.id);
+      toast.success('Task deleted');
+      setDeleteTarget(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't delete the task. Please try again.");
+    }
+  }
 
   return (
     <div className="page">
@@ -243,7 +255,7 @@ export function AllTasksPage() {
           <EmptyState
             icon={<ListIcon width={28} height={28} />}
             title="No tasks found"
-            message="Try changing your search or filters."
+            message="Try adjusting your search or filters."
             action={
               <button type="button" className="button button-secondary" onClick={clearFilters}>
                 Clear filters
@@ -269,7 +281,14 @@ export function AllTasksPage() {
                   <tr key={task.id}>
                     <td data-label="Task">
                       <div className="table-task">
-                        <span className="table-task-title">{task.title}</span>
+                        <button
+                          type="button"
+                          className="table-task-title"
+                          onClick={() => editTask(task)}
+                          title={task.title}
+                        >
+                          {task.title}
+                        </button>
                         <span
                           className={
                             task.description
@@ -309,7 +328,7 @@ export function AllTasksPage() {
                         <button
                           type="button"
                           className="icon-button icon-button-danger"
-                          onClick={() => deleteTask(task)}
+                          onClick={() => setDeleteTarget(task)}
                           aria-label={`Delete task "${task.title}"`}
                           title="Delete task"
                         >
@@ -348,6 +367,15 @@ export function AllTasksPage() {
           </div>
         </div>
       )}
+
+      {deleteTarget ? (
+        <DeleteTaskDialog
+          task={deleteTarget}
+          columnTitle={deleteTarget.columnTitle}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
     </div>
   );
 }

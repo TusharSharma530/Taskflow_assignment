@@ -423,6 +423,7 @@ textarea {
   font-weight: 700;
   font-size: 16px;
   letter-spacing: -0.01em;
+  text-decoration: none;
 }
 
 .sidebar-logo {
@@ -443,21 +444,44 @@ textarea {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 16px 12px;
+  gap: 24px;
+  padding: 20px 12px;
   flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-label {
+  padding: 0 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
 }
 
 .sidebar-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 44px;
   padding: 10px 12px;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
+  text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
 }
 
 .sidebar-link:hover {
@@ -470,6 +494,18 @@ textarea {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
+}
+
+.sidebar-link-active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
 }
 
 .sidebar-footer {
@@ -491,9 +527,9 @@ textarea {
 
 .sidebar-footer-name::before {
   content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   background: var(--accent);
 }
 
@@ -1113,24 +1149,25 @@ textarea {
 .tasks-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 640px;
+  min-width: 820px;
   table-layout: fixed;
 }
 
 .tasks-table th {
-  padding: 8px;
+  padding: 10px 12px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 .tasks-table td {
-  padding: 8px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
   font-size: 13px;
@@ -1141,7 +1178,7 @@ textarea {
 }
 
 .tasks-table tbody tr {
-  transition: background-color 0.12s ease;
+  transition: background-color 0.15s ease;
 }
 
 .tasks-table tbody tr:hover {
@@ -1151,22 +1188,41 @@ textarea {
 .table-task {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
 }
 
 .table-task-title {
+  all: unset;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
   color: var(--text);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.table-task-title:hover {
+  color: var(--accent);
 }
 
 .table-task-desc {
   font-size: 12px;
   color: var(--text-muted);
-  max-width: 260px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .status-chip {
@@ -1215,12 +1271,12 @@ textarea {
 }
 
 .table-actions {
-  width: 176px;
+  width: 210px;
   text-align: right;
 }
 
 .tasks-table th:last-child {
-  width: 176px;
+  width: 210px;
   text-align: right;
   white-space: nowrap;
 }
@@ -1230,9 +1286,11 @@ textarea {
   align-items: center;
   justify-content: flex-end;
   gap: 2px;
+  white-space: nowrap;
 }
 
 .task-actions .icon-button {
+  flex-shrink: 0;
   width: 30px;
   height: 30px;
 }
@@ -1243,6 +1301,7 @@ textarea {
 
 .move-select {
   width: auto;
+  flex-shrink: 0;
   padding: 4px 8px;
   font-size: 12px;
   font-weight: 600;
@@ -1263,22 +1322,22 @@ textarea {
 
 .tasks-table th:first-child,
 .tasks-table td:first-child {
-  width: 300px;
+  width: auto;
 }
 
 .tasks-table th:nth-child(2),
 .tasks-table td:nth-child(2) {
-  width: 96px;
+  width: 110px;
 }
 
 .tasks-table th:nth-child(3),
 .tasks-table td:nth-child(3) {
-  width: 132px;
+  width: 130px;
 }
 
 .tasks-table th:nth-child(4),
 .tasks-table td:nth-child(4) {
-  width: 112px;
+  width: 110px;
 }
 
 /* All tasks page ------------------------------------------------------------ */
@@ -1333,13 +1392,6 @@ textarea {
 
 .toolbar-refresh.refreshing svg {
   animation: button-spin 0.8s linear infinite;
-}
-
-.table-task-desc {
-  max-width: 380px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .table-task-no-desc {
@@ -2477,6 +2529,7 @@ textarea {
     color: var(--text);
     font-weight: 700;
     font-size: 15px;
+    text-decoration: none;
   }
 
   .content {
