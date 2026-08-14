@@ -19,38 +19,74 @@ const SEED_COLUMNS: Array<{ title: string; position: number }> = [
 const SEED_TASKS: Record<string, SeedTask[]> = {
   'To Do': [
     {
-      title: 'Build task board',
-      description: 'Assemble the React + TypeScript board UI and connect it to the API.',
-      priority: 'MEDIUM',
-      minutesAgo: 4 * 60,
-    },
-    {
-      title: 'Write tests',
-      description: 'Cover the API with automated tests using Vitest and Supertest.',
+      title: 'Build authentication API',
+      description: 'Add sign-up, sign-in and token refresh endpoints.',
       priority: 'HIGH',
       minutesAgo: 2 * 60,
+    },
+    {
+      title: 'Design database schema',
+      description: 'Finalize tables, constraints and indexes for the task board.',
+      priority: 'MEDIUM',
+      minutesAgo: 8 * 60,
+    },
+    {
+      title: 'Write API documentation',
+      description: 'Document every endpoint with request and response examples.',
+      priority: 'LOW',
+      minutesAgo: 2 * 24 * 60,
+    },
+    {
+      title: 'Add due dates',
+      description: 'Allow tasks to carry an optional due date.',
+      priority: 'MEDIUM',
+      minutesAgo: 3 * 24 * 60,
     },
   ],
   'In Progress': [
     {
-      title: 'Create API',
-      description: 'Build the Express REST API with validation and error handling.',
+      title: 'Create REST endpoints',
+      description: 'Build the Express routes for tasks and boards.',
       priority: 'HIGH',
-      minutesAgo: 6 * 60,
+      minutesAgo: 50,
+    },
+    {
+      title: 'Build the board UI',
+      description: 'Implement columns, task cards and the create/edit flows.',
+      priority: 'MEDIUM',
+      minutesAgo: 4 * 60,
+    },
+    {
+      title: 'Add search & filtering',
+      description: 'Client-side title search plus a priority filter.',
+      priority: 'LOW',
+      minutesAgo: 9 * 60,
     },
   ],
   Done: [
     {
-      title: 'Set up project',
-      description: 'Initialize the monorepo, tooling and database schema.',
+      title: 'Set up monorepo',
+      description: 'Initialize tooling, workspaces and the shared toolchain.',
       priority: 'LOW',
+      minutesAgo: 4 * 24 * 60,
+    },
+    {
+      title: 'Write the seed script',
+      description: 'Populate a fresh database with realistic demo data.',
+      priority: 'MEDIUM',
       minutesAgo: 3 * 24 * 60,
     },
     {
-      title: 'Deploy application',
-      description: 'Deploy the backend and frontend to a hosting provider.',
+      title: 'Add delete confirmation',
+      description: 'Guard destructive actions behind a confirmation dialog.',
       priority: 'MEDIUM',
       minutesAgo: 24 * 60,
+    },
+    {
+      title: 'Wire up persistence tests',
+      description: 'Verify CRUD, foreign keys and required queries with Vitest.',
+      priority: 'HIGH',
+      minutesAgo: 5 * 60,
     },
   ],
 };

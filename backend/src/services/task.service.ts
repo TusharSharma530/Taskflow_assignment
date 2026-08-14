@@ -1,9 +1,13 @@
 import type Database from 'better-sqlite3';
 import { badRequest, notFound } from '../errors/http.error';
-import type { Priority, TaskRow } from '../repositories/task.repository';
+import type { Priority, TaskRow, TaskListItem } from '../repositories/task.repository';
 import * as taskRepo from '../repositories/task.repository';
 import type { ValidatedTaskInput } from '../validation/task.validation';
 import { requireColumn } from './board.service';
+
+export function listTasks(db: Database.Database): TaskListItem[] {
+  return taskRepo.listTasks(db);
+}
 
 export function createTask(
   db: Database.Database,

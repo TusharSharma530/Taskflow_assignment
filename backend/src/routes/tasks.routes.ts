@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3';
 import {
   createTaskController,
   deleteTaskController,
+  listTasksController,
   moveTaskController,
   updateTaskController,
 } from '../controllers/tasks.controller';
@@ -10,6 +11,7 @@ import {
 export function tasksRouter(db: Database.Database): Router {
   const router = Router();
 
+  router.get('/tasks', listTasksController(db));
   router.post('/tasks', createTaskController(db));
   router.put('/tasks/:taskId', updateTaskController(db));
   router.delete('/tasks/:taskId', deleteTaskController(db));

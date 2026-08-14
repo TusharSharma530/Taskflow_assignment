@@ -63,8 +63,8 @@ describe('GET /api/boards/:boardId/column-counts', () => {
         row.taskCount,
       ]),
     );
-    expect(byTitle['To Do']).toBe(2);
-    expect(byTitle['In Progress']).toBe(1);
-    expect(byTitle['Done']).toBe(2);
+    expect(byTitle['To Do']).toBe(4);
+    expect(byTitle['In Progress']).toBe(3);
+    expect(byTitle['Done']).toBe(4);
   });
 });

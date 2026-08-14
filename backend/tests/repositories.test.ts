@@ -31,9 +31,9 @@ describe('Query 1 — task count per column', () => {
     );
 
     expect(counts).toHaveLength(3);
-    expect(byTitle['To Do']).toBe(2);
-    expect(byTitle['In Progress']).toBe(1);
-    expect(byTitle['Done']).toBe(2);
+    expect(byTitle['To Do']).toBe(4);
+    expect(byTitle['In Progress']).toBe(3);
+    expect(byTitle['Done']).toBe(4);
   });
 
   it('includes columns with zero tasks', () => {
@@ -70,7 +70,7 @@ describe('Query 1 — task count per column', () => {
 
     const counts = getTaskCountPerColumn(db, 1);
     const total = counts.reduce((sum, row) => sum + row.taskCount, 0);
-    expect(total).toBe(5);
+    expect(total).toBe(11);
   });
 });
 

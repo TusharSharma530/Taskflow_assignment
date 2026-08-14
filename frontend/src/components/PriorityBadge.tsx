@@ -9,6 +9,7 @@ const LABELS: Record<Priority, string> = {
 export function PriorityBadge({ priority }: { priority: Priority }) {
   return (
     <span className={`priority-badge priority-${priority.toLowerCase()}`}>
+      <span className="priority-dot" aria-hidden="true" />
       {LABELS[priority]}
     </span>
   );

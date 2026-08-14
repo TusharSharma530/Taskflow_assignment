@@ -4,6 +4,37 @@ import { createTestApp } from './helpers';
 import type { Express } from 'express';
 import { getColumnsByBoard } from '../src/repositories/board.repository';
 
+describe('GET /api/tasks', () => {
+  it('lists all tasks with their column status', async () => {
+    const { app } = createTestApp();
+    const response = await request(app).get('/api/tasks');
+
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBeGreaterThan(0);
+
+    const toDoTask = response.body.find(
+      (task: { columnTitle: string }) => task.columnTitle === 'To Do',
+    );
+    expect(toDoTask).toMatchObject({
+      id: expect.any(Number),
+      title: expect.any(String),
+      priority: expect.any(String),
+      columnId: expect.any(Number),
+      boardId: 1,
+    });
+  });
+
+  it('is ordered newest first', async () => {
+    const { app } = createTestApp();
+    const response = await request(app).get('/api/tasks');
+
+    const dates = response.body.map(
+      (task: { createdAt: string }) => task.createdAt,
+    );
+    expect(dates).toEqual([...dates].sort((a, b) => b.localeCompare(a)));
+  });
+});
+
 describe('POST /api/tasks', () => {
   let ctx: ReturnType<typeof createTestApp>;
   let app: Express;

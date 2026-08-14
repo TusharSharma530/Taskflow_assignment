@@ -1,5 +1,11 @@
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export const PRIORITY_ORDER: Priority[] = ['LOW', 'MEDIUM', 'HIGH'];
+
+export function isPriority(value: unknown): value is Priority {
+  return value === 'LOW' || value === 'MEDIUM' || value === 'HIGH';
+}
+
 export interface BoardSummary {
   id: number;
   title: string;
@@ -13,6 +19,11 @@ export interface Task {
   description: string | null;
   priority: Priority;
   createdAt: string;
+}
+
+export interface TaskListItem extends Task {
+  columnTitle: string;
+  boardId: number;
 }
 
 export interface Column {
@@ -31,12 +42,6 @@ export interface Board {
   columns: Column[];
 }
 
-export interface ColumnCount {
-  columnId: number;
-  columnTitle: string;
-  taskCount: number;
-}
-
 export interface TaskInput {
   columnId: number;
   title: string;
@@ -49,3 +54,5 @@ export interface TaskUpdate {
   description?: string | null;
   priority?: Priority;
 }
+
+export type Filter = 'ALL' | Priority;

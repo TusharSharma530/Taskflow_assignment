@@ -47,6 +47,40 @@ export function getTasksByPriority(
     .all(priority) as TaskRow[];
 }
 
+export interface TaskListItem {
+  id: number;
+  title: string;
+  description: string | null;
+  priority: Priority;
+  createdAt: string;
+  columnId: number;
+  columnTitle: string;
+  boardId: number;
+}
+
+/**
+ * Returns every task in the database joined with its column, newest first.
+ * Used by the "All Tasks" listing.
+ */
+export function listTasks(db: Database.Database): TaskListItem[] {
+  return db
+    .prepare(
+      `SELECT
+         t.id,
+         t.title,
+         t.description,
+         t.priority,
+         t.created_at AS createdAt,
+         c.id         AS columnId,
+         c.title      AS columnTitle,
+         c.board_id   AS boardId
+       FROM tasks t
+       JOIN columns c ON c.id = t.column_id
+       ORDER BY t.created_at DESC, t.id DESC`,
+    )
+    .all() as TaskListItem[];
+}
+
 export function getTaskById(
   db: Database.Database,
   taskId: number,

@@ -1,14 +1,22 @@
 import type {
   Board,
   BoardSummary,
-  ColumnCount,
   Priority,
   Task,
   TaskInput,
+  TaskListItem,
   TaskUpdate,
-} from './types';
+} from '../types';
 
 const BASE_URL = '/api';
+
+/** Error thrown for any failed API request, carrying a user-safe message. */
+export class ApiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
@@ -18,7 +26,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init,
     });
   } catch {
-    throw new Error('Unable to reach the server. Please try again.');
+    throw new ApiError('Unable to reach the server. Please try again.');
   }
 
   if (!response.ok) {
@@ -29,9 +37,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
         message = body.error;
       }
     } catch {
-      // keep the generic message when the response is not JSON
+      // keep the generic message when the body is not JSON
     }
-    throw new Error(message);
+    throw new ApiError(message);
   }
 
   if (response.status === 204) {
@@ -48,8 +56,8 @@ export function fetchBoard(boardId: number): Promise<Board> {
   return request<Board>(`/boards/${boardId}`);
 }
 
-export function fetchColumnCounts(boardId: number): Promise<ColumnCount[]> {
-  return request<ColumnCount[]>(`/boards/${boardId}/column-counts`);
+export function fetchTasks(): Promise<TaskListItem[]> {
+  return request<TaskListItem[]>('/tasks');
 }
 
 export function createTask(input: TaskInput): Promise<Task> {
@@ -77,6 +85,10 @@ export function moveTask(taskId: number, columnId: number): Promise<Task> {
   });
 }
 
-export function isPriority(value: string): value is Priority {
-  return value === 'LOW' || value === 'MEDIUM' || value === 'HIGH';
-}
+/** Shared list of priority options for selects and labels. */
+export const PRIORITY_OPTIONS: Array<{ value: Priority | 'ALL'; label: string }> = [
+  { value: 'ALL', label: 'All priorities' },
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+];

@@ -8,6 +8,12 @@ import {
 } from '../validation/task.validation';
 import { parseId } from './boards.controller';
 
+export function listTasksController(db: Database.Database) {
+  return (_req: Request, res: Response): void => {
+    res.json(taskService.listTasks(db));
+  };
+}
+
 export function createTaskController(db: Database.Database) {
   return (req: Request, res: Response): void => {
     const result = validateCreateTask(req.body);
