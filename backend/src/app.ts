@@ -1,16 +1,16 @@
 import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
-import type Database from 'better-sqlite3';
 import { HttpError } from './errors/http.error';
 import { boardsRouter } from './routes/boards.routes';
 import { tasksRouter } from './routes/tasks.routes';
+import type { Db } from './db/database';
 
 /**
- * Creates the Express application wired to a specific database handle.
- * Receiving the database as a parameter keeps the app easy to test in
- * isolation (each test uses its own in-memory database).
+ * Creates the Express application wired to a specific database pool.
+ * Receiving the pool as a parameter keeps the app easy to test in
+ * isolation (each test uses its own test database).
  */
-export function createApp(db: Database.Database): express.Express {
+export function createApp(db: Db): express.Express {
   const app = express();
 
   app.use(cors());
@@ -29,6 +29,8 @@ export function createApp(db: Database.Database): express.Express {
   });
 
   // Centralized error handling: never leak stack traces to clients.
+  // Express 4 does not catch rejected promises, so async handlers forward
+  // their errors through `next` (see utils/async-handler.ts).
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof HttpError) {

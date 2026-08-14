@@ -1,7 +1,7 @@
-import type Database from 'better-sqlite3';
 import { badRequest, notFound } from '../errors/http.error';
 import type { ColumnRow, TaskCountRow, BoardRow, BoardTaskRow } from '../repositories/board.repository';
 import * as boardRepo from '../repositories/board.repository';
+import type { Db } from '../db/database';
 
 export interface BoardColumn extends ColumnRow {
   tasks: BoardTaskRow[];
@@ -11,18 +11,18 @@ export interface BoardResponse extends BoardRow {
   columns: BoardColumn[];
 }
 
-export function listBoards(db: Database.Database): BoardRow[] {
+export async function listBoards(db: Db): Promise<BoardRow[]> {
   return boardRepo.listBoards(db);
 }
 
-export function getBoard(db: Database.Database, boardId: number): BoardResponse {
-  const board = boardRepo.getBoardById(db, boardId);
+export async function getBoard(db: Db, boardId: number): Promise<BoardResponse> {
+  const board = await boardRepo.getBoardById(db, boardId);
   if (!board) {
     throw notFound('Board not found');
   }
 
-  const columns = boardRepo.getColumnsByBoard(db, boardId);
-  const tasks = boardRepo.getTasksByBoard(db, boardId);
+  const columns = await boardRepo.getColumnsByBoard(db, boardId);
+  const tasks = await boardRepo.getTasksByBoard(db, boardId);
 
   const tasksByColumn = new Map<number, BoardTaskRow[]>();
   for (const task of tasks) {
@@ -40,21 +40,18 @@ export function getBoard(db: Database.Database, boardId: number): BoardResponse 
   };
 }
 
-export function getColumnCounts(
-  db: Database.Database,
+export async function getColumnCounts(
+  db: Db,
   boardId: number,
-): TaskCountRow[] {
-  if (!boardRepo.getBoardById(db, boardId)) {
+): Promise<TaskCountRow[]> {
+  if (!(await boardRepo.getBoardById(db, boardId))) {
     throw notFound('Board not found');
   }
   return boardRepo.getTaskCountPerColumn(db, boardId);
 }
 
-export function requireColumn(
-  db: Database.Database,
-  columnId: number,
-): ColumnRow {
-  const column = boardRepo.getColumnById(db, columnId);
+export async function requireColumn(db: Db, columnId: number): Promise<ColumnRow> {
+  const column = await boardRepo.getColumnById(db, columnId);
   if (!column) {
     throw badRequest('Column does not exist');
   }

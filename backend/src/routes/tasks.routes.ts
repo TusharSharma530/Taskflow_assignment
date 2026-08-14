@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
 import {
   createTaskController,
   deleteTaskController,
@@ -8,8 +7,9 @@ import {
   moveTaskController,
   updateTaskController,
 } from '../controllers/tasks.controller';
+import type { Db } from '../db/database';
 
-export function tasksRouter(db: Database.Database): Router {
+export function tasksRouter(db: Db): Router {
   const router = Router();
 
   router.get('/tasks', listTasksController(db));

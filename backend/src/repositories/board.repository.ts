@@ -1,4 +1,6 @@
-import type Database from 'better-sqlite3';
+import type { RowDataPacket } from 'mysql2';
+import type { Db } from '../db/database';
+import { normalizeCount, normalizeRows, type SqlRow } from './row-mapper';
 
 export interface BoardRow {
   id: number;
@@ -35,110 +37,110 @@ export interface BoardTaskRow {
  * Counts the tasks in every column of a board. A LEFT JOIN keeps columns
  * with zero tasks in the result, and ordering follows column position.
  */
-export function getTaskCountPerColumn(
-  db: Database.Database,
+export async function getTaskCountPerColumn(
+  db: Db,
   boardId: number,
-): TaskCountRow[] {
-  const rows = db
-    .prepare(
-      `SELECT
-         c.id         AS columnId,
-         c.title      AS columnTitle,
-         COUNT(t.id)  AS taskCount
-       FROM columns c
-       LEFT JOIN tasks t ON t.column_id = c.id
-       WHERE c.board_id = ?
-       GROUP BY c.id, c.title, c.position
-       ORDER BY c.position, c.id`,
-    )
-    .all(boardId) as Array<Omit<TaskCountRow, 'taskCount'> & { taskCount: number }>;
+): Promise<TaskCountRow[]> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT
+       c.id         AS columnId,
+       c.title      AS columnTitle,
+       COUNT(t.id)  AS taskCount
+     FROM columns c
+     LEFT JOIN tasks t ON t.column_id = c.id
+     WHERE c.board_id = ?
+     GROUP BY c.id, c.title, c.position
+     ORDER BY c.position, c.id`,
+    [boardId],
+  );
 
-  return rows;
+  return normalizeRows(
+    rows.map((row) => ({ ...row, taskCount: normalizeCount(row.taskCount) })),
+  ) as TaskCountRow[];
 }
 
-export function listBoards(db: Database.Database): BoardRow[] {
-  return db
-    .prepare(
-      `SELECT id, title, created_at AS createdAt
-       FROM boards
-       ORDER BY id`,
-    )
-    .all() as BoardRow[];
+export async function listBoards(db: Db): Promise<BoardRow[]> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT id, title, created_at AS createdAt
+     FROM boards
+     ORDER BY id`,
+  );
+  return normalizeRows(rows as Array<BoardRow & SqlRow>) as BoardRow[];
 }
 
-export function getBoardById(
-  db: Database.Database,
+export async function getBoardById(
+  db: Db,
   boardId: number,
-): BoardRow | undefined {
-  return db
-    .prepare(
-      `SELECT id, title, created_at AS createdAt
-       FROM boards
-       WHERE id = ?`,
-    )
-    .get(boardId) as BoardRow | undefined;
+): Promise<BoardRow | undefined> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT id, title, created_at AS createdAt
+     FROM boards
+     WHERE id = ?`,
+    [boardId],
+  );
+  const normalized = normalizeRows(rows as Array<BoardRow & SqlRow>);
+  return normalized[0] as BoardRow | undefined;
 }
 
-export function getColumnsByBoard(
-  db: Database.Database,
+export async function getColumnsByBoard(
+  db: Db,
   boardId: number,
-): ColumnRow[] {
-  return db
-    .prepare(
-      `SELECT
-         id,
-         board_id   AS boardId,
-         title,
-         position,
-         created_at AS createdAt
-       FROM columns
-       WHERE board_id = ?
-       ORDER BY position, id`,
-    )
-    .all(boardId) as ColumnRow[];
+): Promise<ColumnRow[]> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT
+       id,
+       board_id   AS boardId,
+       title,
+       position,
+       created_at AS createdAt
+     FROM columns
+     WHERE board_id = ?
+     ORDER BY position, id`,
+    [boardId],
+  );
+  return normalizeRows(rows as Array<ColumnRow & SqlRow>) as ColumnRow[];
 }
 
-export function getColumnById(
-  db: Database.Database,
+export async function getColumnById(
+  db: Db,
   columnId: number,
-): ColumnRow | undefined {
-  return db
-    .prepare(
-      `SELECT
-         id,
-         board_id   AS boardId,
-         title,
-         position,
-         created_at AS createdAt
-       FROM columns
-       WHERE id = ?`,
-    )
-    .get(columnId) as ColumnRow | undefined;
+): Promise<ColumnRow | undefined> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT
+       id,
+       board_id   AS boardId,
+       title,
+       position,
+       created_at AS createdAt
+     FROM columns
+     WHERE id = ?`,
+    [columnId],
+  );
+  const normalized = normalizeRows(rows as Array<ColumnRow & SqlRow>);
+  return normalized[0] as ColumnRow | undefined;
 }
 
 /**
  * Returns every task belonging to a board together with the column it
  * lives in, used to assemble the board response.
  */
-export function getTasksByBoard(
-  db: Database.Database,
+export async function getTasksByBoard(
+  db: Db,
   boardId: number,
-): BoardTaskRow[] {
-  const rows = db
-    .prepare(
-      `SELECT
-         t.id,
-         t.title,
-         t.description,
-         t.priority,
-         t.created_at AS createdAt,
-         t.column_id   AS columnId
-       FROM tasks t
-       JOIN columns c ON c.id = t.column_id
-       WHERE c.board_id = ?
-       ORDER BY t.id`,
-    )
-    .all(boardId) as Array<Pick<BoardTaskRow, 'id' | 'title' | 'description' | 'priority' | 'createdAt' | 'columnId'>>;
-
-  return rows;
+): Promise<BoardTaskRow[]> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT
+       t.id,
+       t.title,
+       t.description,
+       t.priority,
+       t.created_at AS createdAt,
+       t.column_id   AS columnId
+     FROM tasks t
+     JOIN columns c ON c.id = t.column_id
+     WHERE c.board_id = ?
+     ORDER BY t.id`,
+    [boardId],
+  );
+  return normalizeRows(rows as Array<BoardTaskRow & SqlRow>) as BoardTaskRow[];
 }

@@ -1,68 +1,68 @@
-import type Database from 'better-sqlite3';
 import { badRequest, notFound } from '../errors/http.error';
 import type { TaskRow, TaskListItem, UpdateTaskInput } from '../repositories/task.repository';
 import * as taskRepo from '../repositories/task.repository';
 import type { ValidatedTaskInput } from '../validation/task.validation';
+import type { Db } from '../db/database';
 import { requireColumn } from './board.service';
 
-export function listTasks(db: Database.Database): TaskListItem[] {
+export async function listTasks(db: Db): Promise<TaskListItem[]> {
   return taskRepo.listTasks(db);
 }
 
-export function getTask(db: Database.Database, taskId: number): TaskRow {
-  const task = taskRepo.getTaskById(db, taskId);
+export async function getTask(db: Db, taskId: number): Promise<TaskRow> {
+  const task = await taskRepo.getTaskById(db, taskId);
   if (!task) {
     throw notFound('Task not found');
   }
   return task;
 }
 
-export function createTask(
-  db: Database.Database,
+export async function createTask(
+  db: Db,
   input: ValidatedTaskInput,
-): TaskRow {
-  requireColumn(db, input.columnId);
+): Promise<TaskRow> {
+  await requireColumn(db, input.columnId);
   return taskRepo.createTask(db, input);
 }
 
-export function updateTask(
-  db: Database.Database,
+export async function updateTask(
+  db: Db,
   taskId: number,
   input: UpdateTaskInput,
-): TaskRow {
-  if (!taskRepo.getTaskById(db, taskId)) {
+): Promise<TaskRow> {
+  if (!(await taskRepo.getTaskById(db, taskId))) {
     throw notFound('Task not found');
   }
-  const updated = taskRepo.updateTask(db, taskId, input);
+  const updated = await taskRepo.updateTask(db, taskId, input);
   if (!updated) {
     throw new Error('Failed to update task');
   }
   return updated;
 }
 
-export function deleteTask(db: Database.Database, taskId: number): void {
-  if (!taskRepo.deleteTask(db, taskId)) {
+export async function deleteTask(db: Db, taskId: number): Promise<void> {
+  if (!(await taskRepo.deleteTask(db, taskId))) {
     throw notFound('Task not found');
   }
 }
 
-export function moveTask(
-  db: Database.Database,
+export async function moveTask(
+  db: Db,
   taskId: number,
   columnId: number,
-): TaskRow {
-  const task = taskRepo.getTaskById(db, taskId);
+): Promise<TaskRow> {
+  const task = await taskRepo.getTaskById(db, taskId);
   if (!task) {
     throw notFound('Task not found');
   }
 
-  const target = requireColumn(db, columnId);
-  const current = requireColumn(db, task.columnId);
+  const target = await requireColumn(db, columnId);
+  const current = await requireColumn(db, task.columnId);
   if (target.boardId !== current.boardId) {
     throw badRequest('Task can only be moved to a column on the same board');
   }
 
-  const moved = taskRepo.moveTask(db, taskId, columnId);
+  const moved = await taskRepo.moveTask(db, taskId, columnId);
   if (!moved) {
     throw new Error('Failed to move task');
   }

@@ -4,7 +4,7 @@ import { createTestApp } from './helpers';
 
 describe('GET /api/boards', () => {
   it('lists boards', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/boards');
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
@@ -14,7 +14,7 @@ describe('GET /api/boards', () => {
 
 describe('GET /api/boards/:boardId', () => {
   it('returns the board with columns and tasks', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/boards/1');
 
     expect(response.status).toBe(200);
@@ -37,14 +37,14 @@ describe('GET /api/boards/:boardId', () => {
   });
 
   it('returns 404 for a nonexistent board', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/boards/9999');
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: 'Board not found' });
   });
 
   it('returns 400 for a non-numeric board id', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/boards/abc');
     expect(response.status).toBe(400);
   });
@@ -52,7 +52,7 @@ describe('GET /api/boards/:boardId', () => {
 
 describe('GET /api/boards/:boardId/column-counts', () => {
   it('returns the task count per column (Query 1)', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/boards/1/column-counts');
 
     expect(response.status).toBe(200);

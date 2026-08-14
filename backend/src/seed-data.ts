@@ -1,5 +1,7 @@
-import type Database from 'better-sqlite3';
+import type { PoolConnection, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import type { Priority } from './repositories/task.repository';
+import type { Db } from './db/database';
+import { toMySqlDateTime } from './utils/datetime';
 
 interface SeedTask {
   title: string;
@@ -98,52 +100,65 @@ function minutesAgoIso(minutes: number): string {
 
 /**
  * Inserts the demo board, columns and tasks into the given database,
- * replacing any existing data. Used by `npm run seed` and by tests.
+ * replacing any existing data in a single transaction. Used by `npm run
+ * seed` and by tests.
  */
-export function seedDatabase(db: Database.Database): {
+export async function seedDatabase(db: Db): Promise<{
   boardId: number;
   tasks: number;
   columns: number;
-} {
-  const seed = db.transaction(() => {
-    db.exec('DELETE FROM tasks; DELETE FROM columns; DELETE FROM boards;');
-    // Reset AUTOINCREMENT counters so a reseeded demo board always gets id 1.
-    db.exec("DELETE FROM sqlite_sequence WHERE name IN ('boards', 'columns', 'tasks')");
+}> {
+  const conn: PoolConnection = await db.getConnection();
+  try {
+    // TRUNCATE is fastest and resets AUTO_INCREMENT in one step, but MySQL
+    // refuses to TRUNCATE a table referenced by a foreign key, so foreign
+    // key checks are disabled around the truncates and re-enabled after.
+    await conn.query('SET FOREIGN_KEY_CHECKS = 0');
+    await conn.query('TRUNCATE TABLE tasks');
+    await conn.query('TRUNCATE TABLE columns');
+    await conn.query('TRUNCATE TABLE boards');
+    await conn.query('SET FOREIGN_KEY_CHECKS = 1');
 
-    const boardResult = db
-      .prepare('INSERT INTO boards (title) VALUES (?)')
-      .run(SEED_BOARD_TITLE);
-    const boardId = Number(boardResult.lastInsertRowid);
+    await conn.beginTransaction();
 
-    const insertColumn = db.prepare(
-      'INSERT INTO columns (board_id, title, position) VALUES (?, ?, ?)',
+    const [boardResult] = await conn.execute<ResultSetHeader>(
+      'INSERT INTO boards (title) VALUES (?)',
+      [SEED_BOARD_TITLE],
     );
-    const insertTask = db.prepare(
-      `INSERT INTO tasks (column_id, title, description, priority, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    );
+    const boardId = Number(boardResult.insertId);
 
     let tasks = 0;
     for (const column of SEED_COLUMNS) {
-      const columnResult = insertColumn.run(boardId, column.title, column.position);
-      const columnId = Number(columnResult.lastInsertRowid);
+      const [columnResult] = await conn.execute<ResultSetHeader>(
+        'INSERT INTO columns (board_id, title, position) VALUES (?, ?, ?)',
+        [boardId, column.title, column.position],
+      );
+      const columnId = Number(columnResult.insertId);
       const columnTasks = SEED_TASKS[column.title] ?? [];
       for (const task of columnTasks) {
-        insertTask.run(
-          columnId,
-          task.title,
-          task.description,
-          task.priority,
-          minutesAgoIso(task.minutesAgo),
+        await conn.execute(
+          `INSERT INTO tasks (column_id, title, description, priority, created_at)
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            columnId,
+            task.title,
+            task.description,
+            task.priority,
+            toMySqlDateTime(minutesAgoIso(task.minutesAgo)),
+          ],
         );
         tasks += 1;
       }
     }
 
+    await conn.commit();
     return { boardId, tasks, columns: SEED_COLUMNS.length };
-  });
-
-  return seed();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
 }
 
 /**
@@ -151,11 +166,13 @@ export function seedDatabase(db: Database.Database): {
  * freshly initialised database is never completely empty. Used by the
  * server on startup.
  */
-export function seedIfEmpty(db: Database.Database): boolean {
-  const row = db.prepare('SELECT COUNT(*) AS count FROM boards').get() as { count: number };
-  if (row.count > 0) {
+export async function seedIfEmpty(db: Db): Promise<boolean> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    'SELECT COUNT(*) AS count FROM boards',
+  );
+  if (Number(rows[0]?.count) > 0) {
     return false;
   }
-  seedDatabase(db);
+  await seedDatabase(db);
   return true;
 }

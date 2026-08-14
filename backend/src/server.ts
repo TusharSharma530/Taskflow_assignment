@@ -1,18 +1,24 @@
 import { createApp } from './app';
-import { createDatabase } from './db/database';
-import { config, getDatabasePath, getPort } from './db/config';
+import { createPool } from './db/database';
+import { config, getMySqlConfig, getPort } from './db/config';
 import { seedIfEmpty } from './seed-data';
 
-config();
+async function main(): Promise<void> {
+  config();
 
-const dbPath = getDatabasePath();
-const port = getPort();
+  const port = getPort();
 
-const db = createDatabase(dbPath);
-seedIfEmpty(db);
+  const db = await createPool(getMySqlConfig());
+  await seedIfEmpty(db);
 
-const app = createApp(db);
+  const app = createApp(db);
 
-app.listen(port, () => {
-  console.log(`TaskFlow backend listening on http://localhost:${port}`);
+  app.listen(port, () => {
+    console.log(`TaskFlow backend listening on http://localhost:${port}`);
+  });
+}
+
+main().catch((error) => {
+  console.error('Failed to start the backend:', error);
+  process.exit(1);
 });

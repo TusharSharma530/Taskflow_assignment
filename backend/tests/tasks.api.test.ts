@@ -1,12 +1,24 @@
 import request from 'supertest';
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { createTestApp } from './helpers';
 import type { Express } from 'express';
+import type { Db } from '../src/db/database';
 import { getColumnsByBoard } from '../src/repositories/board.repository';
+
+async function selectFirst(db: Db, sql: string, params: Array<string | number | boolean | null> = []) {
+  const [rows] = await db.execute<RowDataPacket[]>(sql, params);
+  return rows[0];
+}
+
+async function countTasks(db: Db): Promise<number> {
+  const [rows] = await db.execute<RowDataPacket[]>('SELECT COUNT(*) AS c FROM tasks');
+  return Number(rows[0].c);
+}
 
 describe('GET /api/tasks', () => {
   it('lists all tasks with their column status', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/tasks');
 
     expect(response.status).toBe(200);
@@ -25,7 +37,7 @@ describe('GET /api/tasks', () => {
   });
 
   it('is ordered newest first', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/tasks');
 
     const dates = response.body.map(
@@ -36,16 +48,16 @@ describe('GET /api/tasks', () => {
 });
 
 describe('POST /api/tasks', () => {
-  let ctx: ReturnType<typeof createTestApp>;
+  let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let app: Express;
 
-  beforeEach(() => {
-    ctx = createTestApp();
+  beforeEach(async () => {
+    ctx = await createTestApp();
     app = ctx.app;
   });
 
   it('creates a task with a validated body (201)', async () => {
-    const columns = getColumnsByBoard(ctx.db, 1);
+    const columns = await getColumnsByBoard(ctx.db, 1);
     const response = await request(app)
       .post('/api/tasks')
       .send({ columnId: columns[0].id, title: 'Create API', description: 'Build the REST API', priority: 'HIGH' });
@@ -62,7 +74,7 @@ describe('POST /api/tasks', () => {
   });
 
   it('defaults priority to MEDIUM when omitted', async () => {
-    const columns = getColumnsByBoard(ctx.db, 1);
+    const columns = await getColumnsByBoard(ctx.db, 1);
     const response = await request(app)
       .post('/api/tasks')
       .send({ columnId: columns[0].id, title: 'No priority' });
@@ -72,14 +84,14 @@ describe('POST /api/tasks', () => {
   });
 
   it('rejects an empty title with 400 and does not create a task', async () => {
-    const before = (ctx.db.prepare('SELECT COUNT(*) AS c FROM tasks').get() as { c: number }).c;
+    const before = await countTasks(ctx.db);
     const response = await request(app)
       .post('/api/tasks')
       .send({ columnId: 1, title: '   ', priority: 'HIGH' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Task title is required' });
-    const after = (ctx.db.prepare('SELECT COUNT(*) AS c FROM tasks').get() as { c: number }).c;
+    const after = await countTasks(ctx.db);
     expect(after).toBe(before);
   });
 
@@ -122,12 +134,10 @@ describe('POST /api/tasks', () => {
 });
 
 describe('GET /api/tasks/:taskId', () => {
-  let ctx: ReturnType<typeof createTestApp>;
   let app: Express;
 
-  beforeEach(() => {
-    ctx = createTestApp();
-    app = ctx.app;
+  beforeEach(async () => {
+    app = (await createTestApp()).app;
   });
 
   it('returns a single task', async () => {
@@ -150,11 +160,11 @@ describe('GET /api/tasks/:taskId', () => {
 });
 
 describe('PUT /api/tasks/:taskId', () => {
-  let ctx: ReturnType<typeof createTestApp>;
+  let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let app: Express;
 
-  beforeEach(() => {
-    ctx = createTestApp();
+  beforeEach(async () => {
+    ctx = await createTestApp();
     app = ctx.app;
   });
 
@@ -235,11 +245,11 @@ describe('PUT /api/tasks/:taskId', () => {
 });
 
 describe('DELETE /api/tasks/:taskId', () => {
-  let ctx: ReturnType<typeof createTestApp>;
+  let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let app: Express;
 
-  beforeEach(() => {
-    ctx = createTestApp();
+  beforeEach(async () => {
+    ctx = await createTestApp();
     app = ctx.app;
   });
 
@@ -248,7 +258,7 @@ describe('DELETE /api/tasks/:taskId', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ message: 'Task deleted' });
 
-    const exists = ctx.db.prepare('SELECT id FROM tasks WHERE id = 1').get();
+    const exists = await selectFirst(ctx.db, 'SELECT id FROM tasks WHERE id = ?', [1]);
     expect(exists).toBeUndefined();
   });
 
@@ -259,22 +269,24 @@ describe('DELETE /api/tasks/:taskId', () => {
 });
 
 describe('PATCH /api/tasks/:taskId/move', () => {
-  let ctx: ReturnType<typeof createTestApp>;
+  let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let app: Express;
 
-  beforeEach(() => {
-    ctx = createTestApp();
+  beforeEach(async () => {
+    ctx = await createTestApp();
     app = ctx.app;
   });
 
   it('moves a task between columns and persists the new column_id', async () => {
-    const columns = getColumnsByBoard(ctx.db, 1);
+    const columns = await getColumnsByBoard(ctx.db, 1);
     const fromColumn = columns[0]; // To Do
     const toColumn = columns[1]; // In Progress
 
-    const seededTask = ctx.db
-      .prepare('SELECT id, column_id AS columnId FROM tasks WHERE column_id = ?')
-      .get(fromColumn.id) as { id: number; columnId: number };
+    const seededTask = (await selectFirst(
+      ctx.db,
+      'SELECT id, column_id AS columnId FROM tasks WHERE column_id = ?',
+      [fromColumn.id],
+    )) as { id: number; columnId: number };
     expect(seededTask.columnId).toBe(fromColumn.id);
 
     const response = await request(app)
@@ -284,9 +296,11 @@ describe('PATCH /api/tasks/:taskId/move', () => {
     expect(response.status).toBe(200);
     expect(response.body.columnId).toBe(toColumn.id);
 
-    const stored = ctx.db
-      .prepare('SELECT column_id AS columnId FROM tasks WHERE id = ?')
-      .get(seededTask.id) as { columnId: number };
+    const stored = (await selectFirst(
+      ctx.db,
+      'SELECT column_id AS columnId FROM tasks WHERE id = ?',
+      [seededTask.id],
+    )) as { columnId: number };
     expect(stored.columnId).toBe(toColumn.id);
   });
 
@@ -307,37 +321,39 @@ describe('PATCH /api/tasks/:taskId/move', () => {
   });
 
   it('returns 400 when moving to a column on another board', async () => {
-    const otherBoard = ctx.db
-      .prepare('INSERT INTO boards (title) VALUES (?)')
-      .run('Another Board');
-    const otherColumn = ctx.db
-      .prepare('INSERT INTO columns (board_id, title, position) VALUES (?, ?, ?)')
-      .run(Number(otherBoard.lastInsertRowid), 'Elsewhere', 1);
+    const [boardResult] = await ctx.db.execute<ResultSetHeader>(
+      'INSERT INTO boards (title) VALUES (?)',
+      ['Another Board'],
+    );
+    const [columnResult] = await ctx.db.execute<ResultSetHeader>(
+      'INSERT INTO columns (board_id, title, position) VALUES (?, ?, ?)',
+      [boardResult.insertId, 'Elsewhere', 1],
+    );
 
     const response = await request(app)
       .patch('/api/tasks/1/move')
-      .send({ columnId: Number(otherColumn.lastInsertRowid) });
+      .send({ columnId: columnResult.insertId });
     expect(response.status).toBe(400);
   });
 });
 
 describe('error handling', () => {
   it('returns a consistent JSON error shape (404)', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/boards/9999');
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: 'Board not found' });
   });
 
   it('returns 404 JSON for unknown API routes', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app).get('/api/nope');
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: 'Not found' });
   });
 
   it('returns 400 for malformed JSON', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
     const response = await request(app)
       .post('/api/tasks')
       .set('Content-Type', 'application/json')

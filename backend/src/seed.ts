@@ -1,12 +1,19 @@
-import { createDatabase } from './db/database';
-import { config, getDatabasePath } from './db/config';
+import { createPool } from './db/database';
+import { config, getMySqlConfig } from './db/config';
 import { seedDatabase } from './seed-data';
 
-config();
+async function main(): Promise<void> {
+  config();
 
-const db = createDatabase(getDatabasePath());
-const result = seedDatabase(db);
-console.log(
-  `Seeded board #${result.boardId} with ${result.columns} columns and ${result.tasks} tasks.`,
-);
-db.close();
+  const db = await createPool(getMySqlConfig());
+  const result = await seedDatabase(db);
+  console.log(
+    `Seeded board #${result.boardId} with ${result.columns} columns and ${result.tasks} tasks.`,
+  );
+  await db.end();
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

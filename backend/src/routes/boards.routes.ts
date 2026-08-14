@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
 import {
   getBoardController,
   getColumnCountsController,
   listBoardsController,
 } from '../controllers/boards.controller';
+import type { Db } from '../db/database';
 
-export function boardsRouter(db: Database.Database): Router {
+export function boardsRouter(db: Db): Router {
   const router = Router();
 
   router.get('/boards', listBoardsController(db));
