@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import type { Filter } from '../types';
 import { useBoard } from '../hooks/useBoard';
 import { useToast } from '../hooks/useToast';
+import { statusTone } from '../utils/taskStatus';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { PriorityBadge } from '../components/PriorityBadge';
 import { PriorityFilter } from '../components/PriorityFilter';
 import { SearchInput } from '../components/SearchInput';
 import { TaskCardMenu } from '../components/TaskCardMenu';
-import { ListIcon, RefreshIcon } from '../components/icons';
+import { ListIcon, PlusIcon, RefreshIcon } from '../components/icons';
 
 function formatCreated(iso: string): string {
   const date = new Date(iso);
@@ -19,6 +20,14 @@ function formatCreated(iso: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function formatCreatedFull(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 export function AllTasksPage() {
   const { tasks, loading, error, refresh, board, moveTask, columnTitleById } = useBoard();
   const toast = useToast();
@@ -26,12 +35,26 @@ export function AllTasksPage() {
   const [search, setSearch] = useState('');
   const [priority, setPriority] = useState<Filter>('ALL');
   const [status, setStatus] = useState<string>('ALL');
+  const [refreshing, setRefreshing] = useState(false);
 
   const statuses = useMemo(() => {
     const fromBoard = board?.columns.map((column) => column.title);
     const fromTasks = Array.from(new Set(tasks.map((task) => task.columnTitle)));
     const merged = fromBoard ?? fromTasks;
     return Array.from(new Set([...merged, ...fromTasks]));
+  }, [board, tasks]);
+
+  const columnCounts = useMemo(() => {
+    if (board) {
+      return board.columns.map((column) => ({
+        title: column.title,
+        count: tasks.filter((task) => task.columnId === column.id).length,
+      }));
+    }
+    return Array.from(new Set(tasks.map((task) => task.columnTitle))).map((title) => ({
+      title,
+      count: tasks.filter((task) => task.columnTitle === title).length,
+    }));
   }, [board, tasks]);
 
   const visible = useMemo(() => {
@@ -43,6 +66,27 @@ export function AllTasksPage() {
       return matchesSearch && matchesPriority && matchesStatus;
     });
   }, [tasks, search, priority, status]);
+
+  const filtersActive = search.trim() !== '' || priority !== 'ALL' || status !== 'ALL';
+  const initialLoading = loading && tasks.length === 0;
+
+  function clearFilters(): void {
+    setSearch('');
+    setPriority('ALL');
+    setStatus('ALL');
+  }
+
+  async function handleRefresh(): Promise<void> {
+    if (refreshing) {
+      return;
+    }
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function handleMove(task: { id: number; columnId: number }, columnId: number): Promise<void> {
     try {
@@ -64,56 +108,149 @@ export function AllTasksPage() {
       <header className="page-header">
         <div>
           <h1 className="page-title">All Tasks</h1>
-          <p className="page-subtitle">View and manage every task on your board.</p>
-        </div>
-      </header>
-
-      <div className="toolbar">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search tasks..." />
-        <PriorityFilter value={priority} onChange={setPriority} label="" id="tasks-priority-filter" />
-        <div className="select-control">
-          <select
-            aria-label="Status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option value="ALL">All statuses</option>
-            {statuses.map((title) => (
-              <option key={title} value={title}>
-                {title}
-              </option>
-            ))}
-          </select>
+          <p className="page-subtitle">View, filter, and manage every task on your board.</p>
         </div>
         <button
           type="button"
-          className="icon-button toolbar-refresh"
-          onClick={() => void refresh()}
-          aria-label="Refresh tasks"
-          title="Refresh"
+          className="button button-primary button-new-task"
+          onClick={() => navigate('/tasks/new')}
         >
-          <RefreshIcon width={17} height={17} />
+          <PlusIcon width={16} height={16} />
+          New Task
         </button>
+      </header>
+
+      {!error && !initialLoading ? (
+        <div className="stat-cards" aria-label="Task overview">
+          <div className="stat-card">
+            <span className="stat-card-label">Total tasks</span>
+            <span className="stat-card-value">{tasks.length}</span>
+          </div>
+          {columnCounts.map((column) => (
+            <div className="stat-card" key={column.title}>
+              <span className="stat-card-label">{column.title}</span>
+              <span className="stat-card-value">{column.count}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="tasks-toolbar">
+        <div className="toolbar">
+          <SearchInput value={search} onChange={setSearch} placeholder="Search tasks by title..." />
+          <PriorityFilter value={priority} onChange={setPriority} label="" id="tasks-priority-filter" />
+          <div className="select-control">
+            <select
+              aria-label="Status"
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              <option value="ALL">All statuses</option>
+              {statuses.map((title) => (
+                <option key={title} value={title}>
+                  {title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            className={`icon-button toolbar-refresh${refreshing ? ' refreshing' : ''}`}
+            onClick={() => void handleRefresh()}
+            disabled={refreshing}
+            aria-label="Refresh tasks"
+            title="Refresh tasks"
+          >
+            <RefreshIcon width={17} height={17} />
+          </button>
+          {filtersActive ? (
+            <button type="button" className="button button-ghost clear-filters" onClick={clearFilters}>
+              Clear filters
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {loading && tasks.length === 0 ? (
-        <div className="table-card">
-          <div className="skeleton skeleton-line" style={{ width: '100%', height: 360 }} />
+      {!error && !initialLoading ? (
+        <p className="tasks-summary" role="status">
+          {filtersActive
+            ? `Showing ${visible.length} of ${tasks.length} tasks`
+            : `${tasks.length} tasks`}
+        </p>
+      ) : null}
+
+      {initialLoading ? (
+        <div className="table-card" aria-busy="true">
+          <table className="tasks-table table-skeleton">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>
+                  <span className="visually-hidden">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 5 }, (_, index) => (
+                <tr key={index}>
+                  <td>
+                    <div className="table-task">
+                      <span className="skeleton skeleton-line" style={{ width: '60%' }} />
+                      <span className="skeleton skeleton-line" style={{ width: '38%' }} />
+                    </div>
+                  </td>
+                  <td>
+                    <span className="skeleton skeleton-line" style={{ width: 66 }} />
+                  </td>
+                  <td>
+                    <span className="skeleton skeleton-line" style={{ width: 80 }} />
+                  </td>
+                  <td>
+                    <span className="skeleton skeleton-line" style={{ width: 52 }} />
+                  </td>
+                  <td />
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : error ? (
         <ErrorState
-          message="We couldn't load your tasks. Please try again."
+          title="Unable to load tasks"
+          message="Something went wrong while loading your tasks."
           onRetry={() => void refresh()}
         />
+      ) : tasks.length === 0 ? (
+        <div className="page-empty">
+          <EmptyState
+            icon={<ListIcon width={28} height={28} />}
+            title="No tasks yet"
+            message="Create your first task to get started."
+            action={
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => navigate('/tasks/new')}
+              >
+                <PlusIcon width={16} height={16} />
+                Create task
+              </button>
+            }
+          />
+        </div>
       ) : visible.length === 0 ? (
         <div className="page-empty">
           <EmptyState
             icon={<ListIcon width={28} height={28} />}
-            title={tasks.length === 0 ? 'No tasks yet' : 'No tasks found'}
-            message={
-              tasks.length === 0
-                ? 'Create your first task to see it here.'
-                : 'Try changing your search or filters.'
+            title="No tasks found"
+            message="Try changing your search or filters."
+            action={
+              <button type="button" className="button button-secondary" onClick={clearFilters}>
+                Clear filters
+              </button>
             }
           />
         </div>
@@ -138,25 +275,35 @@ export function AllTasksPage() {
                     <td data-label="Task">
                       <div className="table-task">
                         <span className="table-task-title">{task.title}</span>
-                        {task.description ? (
-                          <span className="table-task-desc">{task.description}</span>
-                        ) : null}
+                        <span
+                          className={
+                            task.description
+                              ? 'table-task-desc'
+                              : 'table-task-desc table-task-no-desc'
+                          }
+                        >
+                          {task.description ? task.description : 'No description'}
+                        </span>
                       </div>
                     </td>
                     <td data-label="Priority">
                       <PriorityBadge priority={task.priority} />
                     </td>
                     <td data-label="Status">
-                      <span className="status-chip">{task.columnTitle}</span>
+                      <span className={`status-chip status-chip-${statusTone(task.columnTitle)}`}>
+                        <span className="status-chip-dot" aria-hidden="true" />
+                        {task.columnTitle}
+                      </span>
                     </td>
                     <td data-label="Created">
-                      <span className="table-date">{formatCreated(task.createdAt)}</span>
+                      <span className="table-date" title={formatCreatedFull(task.createdAt)}>
+                        {formatCreated(task.createdAt)}
+                      </span>
                     </td>
                     <td className="table-actions">
                       <TaskCardMenu
                         task={task}
                         columns={board?.columns ?? []}
-                        variant="row"
                         onEdit={() => editTask(task)}
                         onDelete={() => deleteTask(task)}
                         onMove={(columnId) => void handleMove(task, columnId)}

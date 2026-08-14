@@ -25,7 +25,7 @@ export function PriorityFilter({ value, onChange, label = 'Priority', id }: Prio
       <select
         id={id}
         value={value}
-        aria-label={label}
+        aria-label={label || 'Priority'}
         onChange={(event) => onChange(event.target.value as Filter)}
       >
         {OPTIONS.map((option) => (

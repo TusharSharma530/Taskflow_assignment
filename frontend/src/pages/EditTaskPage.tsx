@@ -123,7 +123,7 @@ export function EditTaskPage() {
 
   if (status === 'notFound') {
     return (
-      <div className="page edit-page">
+      <div className="page form-page">
         <BackLink to={backTo} />
         <div className="page-empty">
           <EmptyState
@@ -142,7 +142,7 @@ export function EditTaskPage() {
 
   if (status === 'error') {
     return (
-      <div className="page edit-page">
+      <div className="page form-page">
         <BackLink to={backTo} />
         <ErrorState
           title="Unable to load task"
@@ -160,7 +160,7 @@ export function EditTaskPage() {
 
   if (status === 'loading' || !task || !boardReady || !board) {
     return (
-      <div className="page edit-page">
+      <div className="page form-page">
         <BackLink to={backTo} />
         <header className="page-header">
           <div>
@@ -169,8 +169,8 @@ export function EditTaskPage() {
           </div>
         </header>
 
-        <div className="edit-layout" aria-busy="true">
-          <div className="edit-main">
+        <div className="task-page-layout" aria-busy="true">
+          <div className="task-page-main">
             <div className="form-card">
               <header className="form-card-header">
                 <span className="skeleton skeleton-title" style={{ width: '40%' }} />
@@ -183,7 +183,7 @@ export function EditTaskPage() {
             </div>
           </div>
 
-          <aside className="edit-aside">
+          <aside className="task-page-aside">
             <div className="form-card">
               <header className="form-card-header">
                 <span className="skeleton skeleton-title" style={{ width: '55%' }} />
@@ -202,7 +202,7 @@ export function EditTaskPage() {
   }
 
   return (
-    <div className="page edit-page">
+    <div className="page form-page">
       <BackLink to={backTo} />
 
       <header className="page-header">
@@ -218,10 +218,10 @@ export function EditTaskPage() {
         ) : null}
       </header>
 
-      <div className="edit-layout">
-        <div className="edit-main">{editForm}</div>
+      <div className="task-page-layout">
+        <div className="task-page-main">{editForm}</div>
 
-        <aside className="edit-aside">
+        <aside className="task-page-aside">
           <TaskSummary task={task} columnTitle={columnTitle} priority={displayPriority} />
         </aside>
       </div>
@@ -243,7 +243,7 @@ export function EditTaskPage() {
         </Link>
       </section>
 
-      <div className="edit-actions">
+      <div className="task-page-actions">
         <button
           type="button"
           className="button button-secondary"

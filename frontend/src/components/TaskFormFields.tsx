@@ -32,6 +32,8 @@ interface TaskFormFieldsProps {
   initialPriority?: Priority;
   titlePlaceholder?: string;
   descriptionPlaceholder?: string;
+  descriptionHelperText?: string;
+  columnHelperText?: string;
   /** When false, the Cancel/Save buttons are left to the parent page to render. */
   renderActions?: boolean;
   onCancel: () => void;
@@ -51,7 +53,10 @@ export const TaskFormFields = forwardRef<TaskFormFieldsHandle, TaskFormFieldsPro
       defaultColumnId,
       initialPriority,
       titlePlaceholder = 'e.g. Build authentication API',
-      descriptionPlaceholder = 'Add more details about this task...',
+      descriptionPlaceholder =
+        mode === 'create' ? 'Describe what needs to be done...' : 'Add more details about this task...',
+      descriptionHelperText,
+      columnHelperText,
       renderActions = true,
       onCancel,
       onSubmit,
@@ -71,6 +76,18 @@ export const TaskFormFields = forwardRef<TaskFormFieldsHandle, TaskFormFieldsPro
     const [columnError, setColumnError] = useState<string | null>(null);
     const [apiError, setApiError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+
+    const descriptionHelper =
+      descriptionHelperText ??
+      (mode === 'create'
+        ? 'Add context, requirements, or notes for this task.'
+        : 'Add context or details that help explain this task.');
+
+    const columnHelper =
+      columnHelperText ??
+      (mode === 'create'
+        ? 'Choose where this task will appear on the board.'
+        : 'Choose where this task appears on the board.');
 
     const dirty =
       mode === 'edit' && task
@@ -188,7 +205,7 @@ export const TaskFormFields = forwardRef<TaskFormFieldsHandle, TaskFormFieldsPro
             rows={6}
           />
           <div className="field-meta">
-            <p className="field-help">Add context or details that help explain this task.</p>
+            <p className="field-help">{descriptionHelper}</p>
             <span className="field-counter">
               {description.length} / {DESCRIPTION_MAX_LENGTH}
             </span>
@@ -243,7 +260,7 @@ export const TaskFormFields = forwardRef<TaskFormFieldsHandle, TaskFormFieldsPro
               )}
             </Select>
             <div className="field-meta">
-              <p className="field-help">Choose where this task appears on the board.</p>
+              <p className="field-help">{columnHelper}</p>
             </div>
             {columnError ? (
               <p className="form-error" role="alert">

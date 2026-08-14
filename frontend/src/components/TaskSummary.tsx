@@ -1,4 +1,5 @@
 import type { Priority, Task } from '../types';
+import { statusTone } from '../utils/taskStatus';
 import { PriorityBadge } from './PriorityBadge';
 
 interface TaskSummaryProps {
@@ -13,20 +14,6 @@ function formatCreated(iso: string): string {
     return '';
   }
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function statusTone(title: string): string {
-  const normalized = title.trim().toLowerCase();
-  if (normalized === 'to do') {
-    return 'neutral';
-  }
-  if (normalized === 'in progress') {
-    return 'progress';
-  }
-  if (normalized === 'done') {
-    return 'done';
-  }
-  return 'neutral';
 }
 
 export function TaskSummary({ task, columnTitle, priority }: TaskSummaryProps) {

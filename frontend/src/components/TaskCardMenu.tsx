@@ -6,7 +6,6 @@ import { CheckIcon, EditIcon, TrashIcon } from './icons';
 interface TaskCardMenuProps {
   task: Task;
   columns: Column[];
-  variant?: 'card' | 'row';
   onEdit: () => void;
   onDelete: () => void;
   onMove: (columnId: number) => void;
@@ -19,14 +18,7 @@ interface Position {
 
 const MENU_WIDTH = 200;
 
-export function TaskCardMenu({
-  task,
-  columns,
-  variant = 'card',
-  onEdit,
-  onDelete,
-  onMove,
-}: TaskCardMenuProps) {
+export function TaskCardMenu({ task, columns, onEdit, onDelete, onMove }: TaskCardMenuProps) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<Position | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -76,7 +68,7 @@ export function TaskCardMenu({
       return;
     }
 
-    const moveRowCount = variant === 'card' ? otherColumns.length : 0;
+    const moveRowCount = otherColumns.length;
     const height = 60 + 30 + moveRowCount * 36 + 40;
     const spaceBelow = window.innerHeight - rect.bottom;
     const dropBelow = spaceBelow > height;
@@ -129,38 +121,36 @@ export function TaskCardMenu({
                 Edit task
               </button>
 
-              {variant === 'card' ? (
-                <div className="menu-group">
-                  <div className="menu-group-label" tabIndex={-1}>
-                    Move to
-                  </div>
-                  {otherColumns.length === 0 ? (
-                    <div className="menu-note">Only one column</div>
-                  ) : null}
-                  {otherColumns.map((column) => (
-                    <button
-                      key={column.id}
-                      type="button"
-                      className="menu-item menu-item-indent"
-                      role="menuitem"
-                      onClick={() => {
-                        setOpen(false);
-                        onMove(column.id);
-                      }}
-                    >
-                      <span className="menu-item-check">
-                        <CheckIcon width={14} height={14} />
-                      </span>
-                      {column.title}
-                    </button>
-                  ))}
-                  {currentColumn ? (
-                    <div className="menu-current" aria-label="Current column">
-                      Currently in {currentColumn.title}
-                    </div>
-                  ) : null}
+              <div className="menu-group">
+                <div className="menu-group-label" tabIndex={-1}>
+                  Move to
                 </div>
-              ) : null}
+                {otherColumns.length === 0 ? (
+                  <div className="menu-note">Only one column</div>
+                ) : null}
+                {otherColumns.map((column) => (
+                  <button
+                    key={column.id}
+                    type="button"
+                    className="menu-item menu-item-indent"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpen(false);
+                      onMove(column.id);
+                    }}
+                  >
+                    <span className="menu-item-check">
+                      <CheckIcon width={14} height={14} />
+                    </span>
+                    {column.title}
+                  </button>
+                ))}
+                {currentColumn ? (
+                  <div className="menu-current" aria-label="Current column">
+                    Currently in {currentColumn.title}
+                  </div>
+                ) : null}
+              </div>
 
               <div className="menu-separator" />
               <button
