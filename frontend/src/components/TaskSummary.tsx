@@ -1,5 +1,6 @@
 import type { Priority, Task } from '../types';
 import { statusTone } from '../utils/taskStatus';
+import { formatMediumDate } from '../utils/dates';
 import { PriorityBadge } from './PriorityBadge';
 
 interface TaskSummaryProps {
@@ -8,17 +9,9 @@ interface TaskSummaryProps {
   priority?: Priority;
 }
 
-function formatCreated(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 export function TaskSummary({ task, columnTitle, priority }: TaskSummaryProps) {
   const tone = statusTone(columnTitle);
-  const created = formatCreated(task.createdAt);
+  const created = formatMediumDate(task.createdAt);
 
   return (
     <aside className="form-card task-summary" aria-label="Task summary">

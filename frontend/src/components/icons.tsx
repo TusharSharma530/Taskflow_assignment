@@ -73,16 +73,6 @@ export function PlusIcon(props: IconProps) {
   );
 }
 
-export function EllipsisIcon(props: IconProps) {
-  return (
-    <svg {...base(props)}>
-      <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 export function EditIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
@@ -123,15 +113,6 @@ export function ArrowLeftIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
       <path d="M19 12H5M11 19l-7-7 7-7" />
-    </svg>
-  );
-}
-
-export function ArrangeIcon(props: IconProps) {
-  return (
-    <svg {...base(props)}>
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <path d="M3 9h18M9 21V9" />
     </svg>
   );
 }

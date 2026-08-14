@@ -1,10 +1,9 @@
 import type { Filter } from '../types';
+import { PRIORITY_OPTIONS } from '../types';
 
 const OPTIONS: Array<{ value: Filter; label: string }> = [
   { value: 'ALL', label: 'All priorities' },
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
+  ...PRIORITY_OPTIONS,
 ];
 
 interface PriorityFilterProps {

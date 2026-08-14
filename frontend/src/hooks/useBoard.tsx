@@ -132,7 +132,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
       tasks,
       loading,
       error,
-      refresh: () => load(false),
+      refresh: () => load(true),
       createTask,
       updateTask,
       deleteTask,

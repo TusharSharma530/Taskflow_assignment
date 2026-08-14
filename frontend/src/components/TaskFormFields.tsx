@@ -5,7 +5,7 @@ import {
   useState,
 } from 'react';
 import type { Column, Priority, Task, TaskInput } from '../types';
-import { isPriority } from '../types';
+import { isPriority, PRIORITY_OPTIONS } from '../types';
 import { Select } from './Select';
 
 export const TITLE_MAX_LENGTH = 120;
@@ -227,9 +227,11 @@ export const TaskFormFields = forwardRef<TaskFormFieldsHandle, TaskFormFieldsPro
                 }
               }}
             >
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
+              {PRIORITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </Select>
           </div>
 

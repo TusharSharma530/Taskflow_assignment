@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useBlocker, type Location } from 'react-router-dom';
 import type { Priority } from '../types';
+import { PRIORITY_OPTIONS } from '../types';
 import { useBoard } from '../hooks/useBoard';
 import { useToast } from '../hooks/useToast';
 import { Modal } from '../components/Modal';
@@ -355,9 +356,11 @@ export function SettingsPage() {
                   onChange={(event) => update('defaultPriority', event.target.value as Priority)}
                   aria-label="Default priority for new tasks"
                 >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
+                  {PRIORITY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

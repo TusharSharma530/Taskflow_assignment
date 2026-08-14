@@ -1,7 +1,6 @@
 import type {
   Board,
   BoardSummary,
-  Priority,
   Task,
   TaskInput,
   TaskListItem,
@@ -88,11 +87,3 @@ export function moveTask(taskId: number, columnId: number): Promise<Task> {
     body: JSON.stringify({ columnId }),
   });
 }
-
-/** Shared list of priority options for selects and labels. */
-export const PRIORITY_OPTIONS: Array<{ value: Priority | 'ALL'; label: string }> = [
-  { value: 'ALL', label: 'All priorities' },
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
-];

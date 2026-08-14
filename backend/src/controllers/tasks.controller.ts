@@ -6,7 +6,7 @@ import {
   validateMove,
   validateUpdateTask,
 } from '../validation/task.validation';
-import { parseId } from './boards.controller';
+import { parsePositiveIntegerId } from '../utils/params';
 
 export function listTasksController(db: Database.Database) {
   return (_req: Request, res: Response): void => {
@@ -16,7 +16,7 @@ export function listTasksController(db: Database.Database) {
 
 export function getTaskController(db: Database.Database) {
   return (req: Request, res: Response): void => {
-    const taskId = parseId(req.params.taskId, 'taskId');
+    const taskId = parsePositiveIntegerId(req.params.taskId, 'taskId');
     res.json(taskService.getTask(db, taskId));
   };
 }
@@ -36,7 +36,7 @@ export function createTaskController(db: Database.Database) {
 
 export function updateTaskController(db: Database.Database) {
   return (req: Request, res: Response): void => {
-    const taskId = parseId(req.params.taskId, 'taskId');
+    const taskId = parsePositiveIntegerId(req.params.taskId, 'taskId');
     const result = validateUpdateTask(req.body);
     if (!result.ok) {
       res.status(400).json({ error: result.error });
@@ -49,7 +49,7 @@ export function updateTaskController(db: Database.Database) {
 
 export function deleteTaskController(db: Database.Database) {
   return (req: Request, res: Response): void => {
-    const taskId = parseId(req.params.taskId, 'taskId');
+    const taskId = parsePositiveIntegerId(req.params.taskId, 'taskId');
     taskService.deleteTask(db, taskId);
     res.json({ message: 'Task deleted' });
   };
@@ -57,7 +57,7 @@ export function deleteTaskController(db: Database.Database) {
 
 export function moveTaskController(db: Database.Database) {
   return (req: Request, res: Response): void => {
-    const taskId = parseId(req.params.taskId, 'taskId');
+    const taskId = parsePositiveIntegerId(req.params.taskId, 'taskId');
     const result = validateMove(req.body);
     if (!result.ok) {
       res.status(400).json({ error: result.error });

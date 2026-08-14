@@ -111,6 +111,14 @@ describe('POST /api/tasks', () => {
       .send({ columnId: 'abc', title: 'X' });
     expect(response.status).toBe(400);
   });
+
+  it('rejects an overly long title with 400', async () => {
+    const response = await request(app)
+      .post('/api/tasks')
+      .send({ columnId: 1, title: 'x'.repeat(121) });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/120 characters/);
+  });
 });
 
 describe('GET /api/tasks/:taskId', () => {
@@ -175,6 +183,31 @@ describe('PUT /api/tasks/:taskId', () => {
     expect(response.status).toBe(200);
     expect(response.body.title).toBe(task.title);
     expect(response.body.priority).toBe('HIGH');
+  });
+
+  it('preserves the description when it is not part of the update', async () => {
+    const original = await request(app).get('/api/tasks/1');
+    expect(original.body.description).not.toBeNull();
+
+    const response = await request(app).put('/api/tasks/1').send({ priority: 'LOW' });
+    expect(response.status).toBe(200);
+    expect(response.body.description).toBe(original.body.description);
+  });
+
+  it('rejects an overly long title with 400', async () => {
+    const response = await request(app)
+      .put('/api/tasks/1')
+      .send({ title: 'x'.repeat(121) });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/120 characters/);
+  });
+
+  it('rejects an overly long description with 400', async () => {
+    const response = await request(app)
+      .put('/api/tasks/1')
+      .send({ description: 'x'.repeat(501) });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/500 characters/);
   });
 
   it('rejects an empty title with 400', async () => {

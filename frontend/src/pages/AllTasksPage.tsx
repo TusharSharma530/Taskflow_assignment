@@ -4,6 +4,7 @@ import type { Filter, TaskListItem } from '../types';
 import { useBoard } from '../hooks/useBoard';
 import { useToast } from '../hooks/useToast';
 import { statusTone } from '../utils/taskStatus';
+import { formatLongDate, formatShortDate } from '../utils/dates';
 import { DeleteTaskDialog } from '../components/DeleteTaskDialog';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
@@ -11,22 +12,6 @@ import { PriorityBadge } from '../components/PriorityBadge';
 import { PriorityFilter } from '../components/PriorityFilter';
 import { SearchInput } from '../components/SearchInput';
 import { EditIcon, ListIcon, PlusIcon, RefreshIcon, TrashIcon } from '../components/icons';
-
-function formatCreated(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-function formatCreatedFull(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-}
 
 export function AllTasksPage() {
   const { tasks, loading, error, refresh, board, moveTask, columnTitleById, deleteTask } = useBoard();
@@ -310,8 +295,8 @@ export function AllTasksPage() {
                       </span>
                     </td>
                     <td data-label="Created">
-                      <span className="table-date" title={formatCreatedFull(task.createdAt)}>
-                        {formatCreated(task.createdAt)}
+                      <span className="table-date" title={formatLongDate(task.createdAt)}>
+                        {formatShortDate(task.createdAt)}
                       </span>
                     </td>
                     <td className="table-actions">

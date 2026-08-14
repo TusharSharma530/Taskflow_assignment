@@ -2,6 +2,12 @@ export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export const PRIORITY_ORDER: Priority[] = ['LOW', 'MEDIUM', 'HIGH'];
 
+export const PRIORITY_OPTIONS: Array<{ value: Priority; label: string }> = [
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+];
+
 export function isPriority(value: unknown): value is Priority {
   return value === 'LOW' || value === 'MEDIUM' || value === 'HIGH';
 }

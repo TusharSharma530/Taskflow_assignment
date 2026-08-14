@@ -1,4 +1,5 @@
 import type { Column, Task } from '../types';
+import { formatShortDate } from '../utils/dates';
 import { PriorityBadge } from './PriorityBadge';
 import { TaskCardMenu } from './TaskCardMenu';
 
@@ -8,14 +9,6 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onMove: (task: Task, columnId: number) => void;
-}
-
-function formatCreated(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export function TaskCard({ task, columns, onEdit, onDelete, onMove }: TaskCardProps) {
@@ -38,7 +31,7 @@ export function TaskCard({ task, columns, onEdit, onDelete, onMove }: TaskCardPr
 
       <div className="task-card-footer">
         <PriorityBadge priority={task.priority} />
-        <span className="task-card-date">Created {formatCreated(task.createdAt)}</span>
+        <span className="task-card-date">Created {formatShortDate(task.createdAt)}</span>
       </div>
     </article>
   );

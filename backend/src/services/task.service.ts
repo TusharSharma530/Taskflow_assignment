@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3';
 import { badRequest, notFound } from '../errors/http.error';
-import type { Priority, TaskRow, TaskListItem } from '../repositories/task.repository';
+import type { TaskRow, TaskListItem, UpdateTaskInput } from '../repositories/task.repository';
 import * as taskRepo from '../repositories/task.repository';
 import type { ValidatedTaskInput } from '../validation/task.validation';
 import { requireColumn } from './board.service';
@@ -28,7 +28,7 @@ export function createTask(
 export function updateTask(
   db: Database.Database,
   taskId: number,
-  input: { title?: string; description: string | null; priority: Priority },
+  input: UpdateTaskInput,
 ): TaskRow {
   if (!taskRepo.getTaskById(db, taskId)) {
     throw notFound('Task not found');
